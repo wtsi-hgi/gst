@@ -44,7 +44,7 @@ gst server
 gst server --port 3000
 
 # Use mock data instead of querying the database
-gst server --mock ./testdata/sample_data.tsv
+gst server --mock samples.tsv
 ```
 
 After starting the server, open your web browser and navigate to:
