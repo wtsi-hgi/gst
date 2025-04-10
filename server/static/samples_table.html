@@ -5,10 +5,18 @@
             <th>Sanger Sample ID</th>
             <th>Supplier Name</th>
             <th>Manifest Created</th>
+            <th>Manifest Uploaded</th>
+            <th>Labware Received</th>
             <th>Plate/Tube</th>
+            <th>Order Made</th>
+            <th>Library Start</th>
+            <th>Library Complete</th>
             <th>Library Time</th>
             <th>Run ID</th>
             <th>Platform</th>
+            <th>Pipeline</th>
+            <th>Sequencing Run Start</th>
+            <th>Sequencing QC Complete</th>
             <th>Sequencing Time</th>
             <th>QC Pass</th>
         </tr>
@@ -20,17 +28,25 @@
             <td>{{.SangerSampleID}}</td>
             <td>{{.SupplierName}}</td>
             <td>{{if .ManifestCreated}}{{.ManifestCreated.Format "2006-01-02"}}{{end}}</td>
+            <td>{{if .ManifestUploaded}}{{.ManifestUploaded.Format "2006-01-02"}}{{end}}</td>
+            <td>{{if .LabwareReceived}}{{.LabwareReceived.Format "2006-01-02"}}{{end}}</td>
             <td>{{.LabwareHumanBarcode}}</td>
+            <td>{{if .OrderMade}}{{.OrderMade.Format "2006-01-02"}}{{end}}</td>
+            <td>{{if .LibraryStart}}{{.LibraryStart.Format "2006-01-02"}}{{end}}</td>
+            <td>{{if .LibraryComplete}}{{.LibraryComplete.Format "2006-01-02"}}{{end}}</td>
             <td>{{if .LibraryTime}}{{.LibraryTime}}{{else}}-{{end}}</td>
             <td>{{.RunID}}</td>
             <td>{{.Platform}}</td>
+            <td>{{.Pipeline}}</td>
+            <td>{{if .SequencingRunStart}}{{.SequencingRunStart.Format "2006-01-02"}}{{end}}</td>
+            <td>{{if .SequencingQCComplete}}{{.SequencingQCComplete.Format "2006-01-02"}}{{end}}</td>
             <td>{{if .SequencingTime}}{{.SequencingTime}}{{else}}-{{end}}</td>
             <td>{{.QCPass}}</td>
         </tr>
         {{end}}
         {{else}}
         <tr>
-            <td colspan="9">No samples found</td>
+            <td colspan="17">No samples found</td>
         </tr>
         {{end}}
     </tbody>
