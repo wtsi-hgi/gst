@@ -30,13 +30,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/wtsi-hgi/gst/db"
 )
 
-//go:embed static/*.html
+//go:embed static/*.html static/*.css static/*.js
 var staticFiles embed.FS
 
 // Config holds configuration options for the Server.
@@ -57,6 +60,7 @@ type Server struct {
 	cache     *Cache
 	templates *template.Template
 	mux       *http.ServeMux
+	staticFS  fs.FS
 }
 
 // ChartData represents the data structure used for the Chart.js visualization.
@@ -85,6 +89,12 @@ func New(config Config) (*Server, error) {
 		config.CacheTTL = 5 * time.Minute
 	}
 
+	// Extract static files directory
+	staticDir, err := fs.Sub(staticFiles, "static")
+	if err != nil {
+		return nil, fmt.Errorf("failed to access static files: %w", err)
+	}
+
 	// Load and parse templates
 	tmpl, err := template.ParseFS(staticFiles, "static/*.html")
 	if err != nil {
@@ -100,16 +110,45 @@ func New(config Config) (*Server, error) {
 		cache:     cache,
 		templates: tmpl,
 		mux:       http.NewServeMux(),
+		staticFS:  staticDir,
 	}
 
 	// Register routes
-	server.mux.HandleFunc("/", server.handleIndex)
-	server.mux.HandleFunc("/api/samples", server.handleSamples)
-	server.mux.HandleFunc("/api/chart", server.handleChart)
-	server.mux.HandleFunc("/api/filters", server.handleFilters)
-	server.mux.HandleFunc("/api/studies", server.handleStudies)
+	server.registerRoutes()
 
 	return server, nil
+}
+
+// registerRoutes sets up all HTTP routes for the server.
+func (s *Server) registerRoutes() {
+	// API routes
+	s.mux.HandleFunc("/api/samples", s.handleSamples)
+	s.mux.HandleFunc("/api/chart", s.handleChart)
+	s.mux.HandleFunc("/api/filters", s.handleFilters)
+	s.mux.HandleFunc("/api/studies", s.handleStudies)
+
+	// Static files route
+	s.mux.HandleFunc("/static/", s.handleStaticFiles)
+
+	// Index route - must be last as it's the catch-all
+	s.mux.HandleFunc("/", s.handleIndex)
+}
+
+// handleStaticFiles serves static files like CSS and JS.
+func (s *Server) handleStaticFiles(w http.ResponseWriter, r *http.Request) {
+	// Strip prefix to get relative path
+	filePath := strings.TrimPrefix(r.URL.Path, "/static/")
+
+	// Set appropriate content type based on file extension
+	switch path.Ext(filePath) {
+	case ".css":
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	case ".js":
+		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	}
+
+	// Serve the file
+	http.StripPrefix("/static/", http.FileServer(http.FS(s.staticFS))).ServeHTTP(w, r)
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -119,6 +158,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // handleIndex serves the main dashboard HTML page.
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
 	err := s.templates.ExecuteTemplate(w, "index.html", nil)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error rendering template: %v", err),
@@ -234,12 +278,8 @@ func (s *Server) handleFilters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("in handleFilters, got %d samples from cache\n", len(samplesData.Samples))
-
 	// Get unique faculty sponsors
 	sponsors := GetUniqueFacultySponsors(samplesData.Samples)
-
-	fmt.Printf("in handleFilters, got %d unique sponsors\n", len(sponsors))
 
 	// Create response with explicitly initialized array
 	response := FilterResponse{
@@ -279,8 +319,6 @@ func (s *Server) handleStudies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("in handleStudies, got %d samples from cache\n", len(samplesData.Samples))
-
 	// Get studies for this sponsor
 	studies := GetStudiesForSponsor(samplesData.Samples, sponsor)
 
@@ -315,7 +353,9 @@ func prepareChartData(samples []db.TrackedSample) ChartData {
 	}
 
 	for _, sample := range samples {
-		chartData.Labels = append(chartData.Labels, sample.SangerSampleID)
+		// Use supplier name as label instead of SangerSampleID
+		chartData.Labels = append(chartData.Labels, sample.SupplierName)
+		// Keep SangerSampleID for tooltip reference
 		chartData.SampleIds = append(chartData.SampleIds, sample.SangerSampleID)
 
 		// Handle potential nil values
