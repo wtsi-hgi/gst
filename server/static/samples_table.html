@@ -1,0 +1,38 @@
+<table>
+    <thead>
+        <tr>
+            <th>Study ID</th>
+            <th>Study Name</th>
+            <th>Faculty Sponsor</th>
+            <th>Programme</th>
+            <th>Sanger Sample ID</th>
+            <th>Supplier Name</th>
+            <th>Manifest Created</th>
+            <th>Plate/Tube</th>
+            <th>Library Time</th>
+            <th>Run ID</th>
+            <th>Platform</th>
+            <th>Sequencing Time</th>
+            <th>QC Pass</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Samples}}
+        <tr>
+            <td>{{.StudyID}}</td>
+            <td>{{.StudyName}}</td>
+            <td>{{.FacultySponsor}}</td>
+            <td>{{.Programme}}</td>
+            <td>{{.SangerSampleID}}</td>
+            <td>{{.SupplierName}}</td>
+            <td>{{if .ManifestCreated}}{{.ManifestCreated.Format "2006-01-02"}}{{end}}</td>
+            <td>{{.LabwareHumanBarcode}}</td>
+            <td>{{if .LibraryTime}}{{.LibraryTime}}{{else}}-{{end}}</td>
+            <td>{{.RunID}}</td>
+            <td>{{.Platform}}</td>
+            <td>{{if .SequencingTime}}{{.SequencingTime}}{{else}}-{{end}}</td>
+            <td>{{.QCPass}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>

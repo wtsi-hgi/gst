@@ -57,11 +57,11 @@ func (c *MySQLConnector) Connect() (*sql.DB, error) {
 		return nil, fmt.Errorf("error loading .env file: %w", err)
 	}
 
-	user := os.Getenv("GST_AUTOMATION_SQL_USER")
-	password := os.Getenv("GST_AUTOMATION_SQL_PASS")
-	host := os.Getenv("GST_AUTOMATION_SQL_HOST")
-	port := os.Getenv("GST_AUTOMATION_SQL_PORT")
-	dbname := os.Getenv("GST_AUTOMATION_SQL_DB")
+	user := os.Getenv("GST_SQL_USER")
+	password := os.Getenv("GST_SQL_PASS")
+	host := os.Getenv("GST_SQL_HOST")
+	port := os.Getenv("GST_SQL_PORT")
+	dbname := os.Getenv("GST_SQL_DB")
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		user, password, host, port, dbname)

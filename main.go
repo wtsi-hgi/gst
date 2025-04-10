@@ -31,25 +31,48 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/joho/godotenv"
 	"github.com/wtsi-hgi/gst/db"
+	"github.com/wtsi-hgi/gst/server"
 )
 
 func main() {
-	outputPath := flag.String("output", "samples.tsv", "Path to output TSV file")
-	useMock := flag.Bool("mock", false, "Use mock data instead of querying the database")
-	mockPath := flag.String("mockPath", "db/sampledata.tsv", "Path to mock data TSV file")
-	flag.Parse()
+	// Load environment variables from .env file
+	godotenv.Load()
 
-	var provider db.QueryProvider
-	var err error
+	// Subcommands
+	exportCmd := flag.NewFlagSet("export", flag.ExitOnError)
+	serverCmd := flag.NewFlagSet("server", flag.ExitOnError)
 
-	if *useMock {
-		provider, err = db.New(db.WithMockData(*mockPath))
-	} else {
-		fmt.Println("Executing database query. This may take several minutes...")
-		provider, err = db.New()
+	// Export command flags
+	outputPath := exportCmd.String("output", "samples.tsv", "Path to output TSV file")
+
+	// Server command flags
+	serverPort := serverCmd.Int("port", 8080, "Port to run the server on")
+	serverMockPath := serverCmd.String("mock", "db/sampledata.tsv", "Path to mock data TSV file")
+
+	// Check which subcommand is being used
+	if len(os.Args) < 2 {
+		fmt.Println("Expected 'export' or 'server' subcommand")
+		os.Exit(1)
 	}
 
+	switch os.Args[1] {
+	case "export":
+		exportCmd.Parse(os.Args[2:])
+		runExport(outputPath)
+	case "server":
+		serverCmd.Parse(os.Args[2:])
+		runServer(serverPort, serverMockPath)
+	default:
+		fmt.Println("Expected 'export' or 'server' subcommand")
+		os.Exit(1)
+	}
+}
+
+func runExport(outputPath *string) {
+	fmt.Println("Executing database query. This may take several minutes...")
+	provider, err := db.New()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating query provider: %v\n", err)
 		os.Exit(1)
@@ -79,4 +102,39 @@ func main() {
 	}
 
 	fmt.Printf("Results written to %s\n", *outputPath)
+}
+
+func runServer(port *int, mockPath *string) {
+	// Create query provider
+	var provider db.QueryProvider
+	var err error
+
+	if *mockPath != "" {
+		provider, err = db.New(db.WithMockData(*mockPath))
+	} else {
+		provider, err = db.New()
+	}
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating query provider: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Create and start server
+	srv, err := server.New(server.Config{
+		QueryProvider: provider,
+		Port:          *port,
+	})
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating server: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Starting server on port %d...\n", *port)
+
+	if err := srv.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
+		os.Exit(1)
+	}
 }
