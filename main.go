@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/wtsi-hgi/gst/db"
@@ -49,7 +50,8 @@ func main() {
 
 	// Server command flags
 	serverPort := serverCmd.Int("port", 8080, "Port to run the server on")
-	serverMockPath := serverCmd.String("mock", "db/sampledata.tsv", "Path to mock data TSV file")
+	serverMockPath := serverCmd.String("mock", "samples.tsv", "Path to mock data TSV file")
+	cacheTTL := serverCmd.Duration("cacheTTL", 5*time.Minute, "Duration to cache data before refreshing")
 
 	// Check which subcommand is being used
 	if len(os.Args) < 2 {
@@ -63,7 +65,7 @@ func main() {
 		runExport(outputPath)
 	case "server":
 		serverCmd.Parse(os.Args[2:])
-		runServer(serverPort, serverMockPath)
+		runServer(serverPort, serverMockPath, cacheTTL)
 	default:
 		fmt.Println("Expected 'export' or 'server' subcommand")
 		os.Exit(1)
@@ -104,7 +106,7 @@ func runExport(outputPath *string) {
 	fmt.Printf("Results written to %s\n", *outputPath)
 }
 
-func runServer(port *int, mockPath *string) {
+func runServer(port *int, mockPath *string, cacheTTL *time.Duration) {
 	// Create query provider
 	var provider db.QueryProvider
 	var err error
@@ -124,6 +126,7 @@ func runServer(port *int, mockPath *string) {
 	srv, err := server.New(server.Config{
 		QueryProvider: provider,
 		Port:          *port,
+		CacheTTL:      *cacheTTL,
 	})
 
 	if err != nil {

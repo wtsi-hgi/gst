@@ -1,10 +1,7 @@
+{{if .HasData}}
 <table>
     <thead>
         <tr>
-            <th>Study ID</th>
-            <th>Study Name</th>
-            <th>Faculty Sponsor</th>
-            <th>Programme</th>
             <th>Sanger Sample ID</th>
             <th>Supplier Name</th>
             <th>Manifest Created</th>
@@ -17,12 +14,9 @@
         </tr>
     </thead>
     <tbody>
+        {{if .Samples}}
         {{range .Samples}}
         <tr>
-            <td>{{.StudyID}}</td>
-            <td>{{.StudyName}}</td>
-            <td>{{.FacultySponsor}}</td>
-            <td>{{.Programme}}</td>
             <td>{{.SangerSampleID}}</td>
             <td>{{.SupplierName}}</td>
             <td>{{if .ManifestCreated}}{{.ManifestCreated.Format "2006-01-02"}}{{end}}</td>
@@ -34,5 +28,15 @@
             <td>{{.QCPass}}</td>
         </tr>
         {{end}}
+        {{else}}
+        <tr>
+            <td colspan="9">No samples found</td>
+        </tr>
+        {{end}}
     </tbody>
 </table>
+{{else}}
+<div class="instruction-box">
+    Please select a Faculty Sponsor and Study to view sample data.
+</div>
+{{end}}

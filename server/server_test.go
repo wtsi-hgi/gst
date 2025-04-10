@@ -26,6 +26,7 @@
 package server_test
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -99,6 +100,16 @@ func TestServer(t *testing.T) {
 					SequencingTime:       &seqTime,
 					QCPass:               "1",
 				},
+				{
+					StudyID:        "5678",
+					StudyName:      "Another Study",
+					FacultySponsor: "Another Sponsor",
+					Programme:      "Test Programme",
+					SangerSampleID: "SANG456",
+					SupplierName:   "Test Supplier",
+					LibraryTime:    &libraryTime,
+					SequencingTime: &seqTime,
+				},
 			},
 		}
 
@@ -133,7 +144,52 @@ func TestServer(t *testing.T) {
 			})
 		})
 
-		Convey("When requesting the sample data API endpoint", func() {
+		Convey("When requesting the faculty sponsors for filtering", func() {
+			req := httptest.NewRequest("GET", "/api/filters", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("It should return all unique sponsors as JSON", func() {
+				var response struct {
+					FacultySponsors []string `json:"facultySponsors"`
+				}
+				err := json.Unmarshal(resp.Body.Bytes(), &response)
+				So(err, ShouldBeNil)
+
+				So(len(response.FacultySponsors), ShouldEqual, 2)
+				So(response.FacultySponsors, ShouldContain, "Test Sponsor")
+				So(response.FacultySponsors, ShouldContain, "Another Sponsor")
+			})
+		})
+
+		Convey("When requesting studies for a sponsor", func() {
+			req := httptest.NewRequest("GET", "/api/studies?sponsor=Test+Sponsor", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("It should return studies for that sponsor as JSON", func() {
+				var response struct {
+					Studies []string `json:"studies"`
+				}
+				err := json.Unmarshal(resp.Body.Bytes(), &response)
+				So(err, ShouldBeNil)
+
+				So(len(response.Studies), ShouldEqual, 1)
+				So(response.Studies, ShouldContain, "Test Study")
+			})
+		})
+
+		Convey("When requesting the sample data API endpoint without required parameters", func() {
 			req := httptest.NewRequest("GET", "/api/samples", nil)
 			resp := httptest.NewRecorder()
 
@@ -143,14 +199,31 @@ func TestServer(t *testing.T) {
 				So(resp.Code, ShouldEqual, http.StatusOK)
 			})
 
-			Convey("It should contain the sample data", func() {
+			Convey("It should indicate that sponsor and study selection is required", func() {
 				body := resp.Body.String()
-				So(body, ShouldContainSubstring, "Test Study")
-				So(body, ShouldContainSubstring, "SANG123")
+				So(body, ShouldContainSubstring, "Please select")
+				So(body, ShouldNotContainSubstring, "Test Study")
 			})
 		})
 
-		Convey("When requesting the chart data API endpoint", func() {
+		Convey("When requesting the sample data with sponsor and study parameters", func() {
+			req := httptest.NewRequest("GET", "/api/samples?sponsor=Test+Sponsor&study=Test+Study", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("It should contain the filtered sample data", func() {
+				body := resp.Body.String()
+				So(body, ShouldContainSubstring, "SANG123")
+				So(body, ShouldNotContainSubstring, "SANG456")
+			})
+		})
+
+		Convey("When requesting the chart data API endpoint without required parameters", func() {
 			req := httptest.NewRequest("GET", "/api/chart", nil)
 			resp := httptest.NewRecorder()
 
@@ -160,12 +233,34 @@ func TestServer(t *testing.T) {
 				So(resp.Code, ShouldEqual, http.StatusOK)
 			})
 
-			Convey("It should contain chart data in JSON format", func() {
+			Convey("It should return empty chart data", func() {
+				var chartData struct {
+					Labels []string `json:"labels"`
+				}
+				err := json.Unmarshal(resp.Body.Bytes(), &chartData)
+				So(err, ShouldBeNil)
+				So(len(chartData.Labels), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When requesting the chart data with sponsor and study parameters", func() {
+			req := httptest.NewRequest("GET", "/api/chart?sponsor=Test+Sponsor&study=Test+Study", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("It should contain chart data for the filtered samples", func() {
 				body := resp.Body.String()
 				So(body, ShouldContainSubstring, "libraryTime")
 				So(body, ShouldContainSubstring, "sequencingTime")
+				So(body, ShouldContainSubstring, "SANG123")
 				So(body, ShouldContainSubstring, "5")  // LibraryTime value
 				So(body, ShouldContainSubstring, "10") // SequencingTime value
+				So(body, ShouldNotContainSubstring, "SANG456")
 			})
 		})
 	})
