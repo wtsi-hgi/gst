@@ -26,6 +26,7 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"os"
@@ -75,7 +76,7 @@ func (p *MySQLQueryProvider) Execute() (*TrackedSampleCollection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("database connection error: %w", err)
 	}
-	defer p.connector.Close()
+	defer p.connector.Close() //nolint:errcheck
 
 	// Check for nil db connection - this protects against mock tests
 	// that don't configure a proper DB object
@@ -88,7 +89,7 @@ func (p *MySQLQueryProvider) Execute() (*TrackedSampleCollection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query execution error: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	return parseRows(rows)
 }
@@ -104,7 +105,7 @@ func (p *MockQueryProvider) Execute() (*TrackedSampleCollection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open mock data file: %w", err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	reader := csv.NewReader(file)
 	reader.Comma = '\t'
@@ -226,4 +227,28 @@ func parseInt(s string) *int {
 	}
 
 	return &i
+}
+
+// Execute executes the SQL query and returns the results.
+func (p *MySQLQueryProvider) ExecuteGeneral(query string) (*sql.Rows, error) {
+	db, err := p.connector.Connect()
+	if err != nil {
+		return nil, fmt.Errorf("database connection error: %w", err)
+	}
+	defer p.connector.Close() //nolint:errcheck
+
+	// Check for nil db connection - this protects against mock tests
+	// that don't configure a proper DB object
+	if db == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+
+	// Execute the embedded query
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("query execution error: %w", err)
+	}
+	// defer rows.Close()
+
+	return rows, nil
 }

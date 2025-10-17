@@ -38,7 +38,7 @@ func (sc *TrackedSampleCollection) ToTSV(path string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	writer := csv.NewWriter(f)
 	writer.Comma = '\t'

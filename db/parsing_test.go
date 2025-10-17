@@ -37,7 +37,7 @@ func TestParseRows(t *testing.T) {
 		// Create a mock database and connection
 		db, mock, err := sqlmock.New()
 		So(err, ShouldBeNil)
-		defer db.Close()
+		defer db.Close() //nolint:errcheck
 
 		// Define expected columns that match our SELECT query
 		columns := []string{
@@ -65,7 +65,7 @@ func TestParseRows(t *testing.T) {
 		// Execute query
 		rows, err := db.Query("SELECT 1")
 		So(err, ShouldBeNil)
-		defer rows.Close()
+		defer rows.Close() //nolint:errcheck
 
 		// Parse rows with our function
 		result, err := parseRows(rows)

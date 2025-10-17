@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/styles.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/script.js" defer></script>
 </head>
 
 <body>
@@ -30,12 +31,30 @@
                 <!-- Will be populated when a sponsor is selected -->
             </select>
         </div>
+
+        <div class="filter-button">
+           <button id="apply-filters" hx-get="/api/samples" hx-target="#samples-container"
+            hx-include="[name='sponsor'],[name='study']" hx-trigger="click" disabled>
+            Apply
+            </button> 
+        </div>
+    </div>
+    <div class="filters">
+        <div class="filter-group">
+            <label for="search-select"> Search by.. </label>
+            <input type="search" id="query" name="q" placeholder="Search...">
+            <select id="search-select" name="search" disabled>
+                <option value=""> Select an option.. </option>
+            </select>
+        </div>
+        <div class="search-button">
+            <button id="apply-search" hx-trigger="click" disabled>
+                Apply
+            </button>
+        </div>
     </div>
 
-    <button id="apply-filters" hx-get="/api/samples" hx-target="#samples-container"
-        hx-include="[name='sponsor'],[name='study']" hx-trigger="click" disabled>
-        Apply Filters
-    </button>
+    
 
     <!-- Chart section moved above table -->
     <h2>Processing Time Chart</h2>
@@ -52,8 +71,6 @@
             Please select a Faculty Sponsor and Study to view sample data.
         </div>
     </div>
-
-    <script src="/static/script.js"></script>
 </body>
 
 </html>

@@ -73,7 +73,7 @@ func TestWriter(t *testing.T) {
 		Convey("When writing to a TSV file", func() {
 			tmpDir, err := os.MkdirTemp("", "gst_test")
 			So(err, ShouldBeNil)
-			defer os.RemoveAll(tmpDir)
+			defer os.RemoveAll(tmpDir) //nolint:errcheck
 
 			outPath := filepath.Join(tmpDir, "output.tsv")
 			err = collection.ToTSV(outPath)

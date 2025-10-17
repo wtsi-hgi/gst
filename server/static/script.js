@@ -43,6 +43,38 @@ function loadFacultySponsors() {
         });
 }
 
+function loadSearchOptions() {
+    var select = document.getElementById("search-select")
+    
+    var options = [
+        "Sanger Sample ID",
+        "Supplier Name",
+        "Manifest Created",
+        "Manifest Uploaded",
+        "Labware Received",
+        "Plate/Tube",
+        "Order Made",
+        "Library Start",
+        "Library Complete",
+        "Library Time",
+        "Run ID",
+        "Platform",
+        "Pipeline",
+        "Sequencing Run Start",
+        "Sequencing QC Complete",
+        "Sequencing Time",
+        "QC Pass"
+    ]
+
+    options.forEach(option => {
+                console.log(`Adding option: ${option}`);
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                select.appendChild(opt);
+    });
+}
+
 // Process studies response 
 function processStudiesResponse(event) {
     if (event.detail.target.id === 'study-select') {
@@ -263,6 +295,7 @@ function createChart(data) {
             ]
         },
         options: {
+            animation: false,
             indexAxis: 'y',
             scales: {
                 x: {
@@ -303,11 +336,13 @@ function createChart(data) {
 document.addEventListener('DOMContentLoaded', function () {
     // Load faculty sponsors on page load
     loadFacultySponsors();
+    loadSearchOptions();
 
-    // Handle study select enabling/disabling
+    // Handle study select and search enabling/disabling
     document.getElementById('sponsor-select').addEventListener('change', function () {
         const studySelect = document.getElementById('study-select');
         const applyButton = document.getElementById('apply-filters');
+        const searchMenu = document.getElementById('search-select');
 
         if (this.value) {
             studySelect.disabled = false;
@@ -315,6 +350,8 @@ document.addEventListener('DOMContentLoaded', function () {
             studySelect.disabled = true;
             studySelect.innerHTML = '<option value="">Select a study...</option>';
             applyButton.disabled = true;
+            searchMenu.innerHTML = '<option value=""> Select an option.. </option>';
+            searchMenu.disabled = true;
         }
     });
 
@@ -336,15 +373,27 @@ document.addEventListener('DOMContentLoaded', function () {
         handleSampleDataLoaded(event);
     });
 
-    // Apply button handler - also updates the chart
+    // Apply filter handler - also updates the chart & enables search
     document.getElementById('apply-filters').addEventListener('click', function () {
         const sponsor = document.getElementById('sponsor-select').value;
         const study = document.getElementById('study-select').value;
+        const searchMenu = document.getElementById('search-select');
+        const searchButton = document.getElementById('apply-search');
 
         if (sponsor && study) {
             // HTMX will handle the sample table update
             // We manually trigger chart update here
             updateChartWithFilters(sponsor, study);
+            searchMenu.disabled = false;
+            searchButton.disabled = false;
         }
+    });
+
+    // Apply search handler
+    document.getElementById('apply-search').addEventListener('click', function () {
+        const searchText = document.getElementById('query');
+        const searchCol = document.getElementById('search-select');
+
+        console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
     });
 });

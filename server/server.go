@@ -26,12 +26,12 @@
 package server
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -39,8 +39,11 @@ import (
 	"github.com/wtsi-hgi/gst/db"
 )
 
-//go:embed static/*.html static/*.css static/*.js
-var staticFiles embed.FS
+// .   go:embed static/*.html static/*.css static/*.js
+var staticFiles = os.DirFS("server/")
+
+// //go:embed static/*.html static/*.css static/*.js
+// var staticFiles embed.FS
 
 // Config holds configuration options for the Server.
 type Config struct {
