@@ -41,9 +41,11 @@
     </div>
     <div class="filters">
         <div class="filter-group">
-            <label for="search-select"> Search by.. </label>
+            <label> Search by.. </label>
             <input type="search" id="query" name="q" placeholder="Search...">
-            <select id="search-select" name="search" disabled>
+            <select for="search-select" hx-get="/search/options" 
+            hx-target="#search-select" hx-trigger="#apply-filters click"
+            id="search-select" name="search" disabled>
                 <option value=""> Select an option.. </option>
             </select>
         </div>

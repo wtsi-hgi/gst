@@ -133,12 +133,39 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/chart", s.handleChart)
 	s.mux.HandleFunc("/api/filters", s.handleFilters)
 	s.mux.HandleFunc("/api/studies", s.handleStudies)
+	s.mux.HandleFunc("/search/options", s.handleSearchOptions)
 
 	// Static files route
 	s.mux.HandleFunc("/static/", s.handleStaticFiles)
 
 	// Index route - must be last as it's the catch-all
 	s.mux.HandleFunc("/", s.handleIndex)
+}
+
+func (s *Server) handleSearchOptions(w http.ResponseWriter, r *http.Request) {
+	options := []string{
+		"Sanger Sample ID",
+		"Supplier Name",
+		"Manifest Created",
+		"Manifest Uploaded",
+		"Labware Received",
+		"Plate/Tube",
+		"Order Made",
+		"Library Start",
+		"Library Complete",
+		"Library Time",
+		"Run ID",
+		"Platform",
+		"Pipeline",
+		"Sequencing Run Start",
+		"Sequencing QC Complete",
+		"Sequencing Time",
+		"QC Pass",
+	}
+
+	for _, opt := range options {
+		w.Write([]byte(`<option value="` + opt + `">` + opt + `</option>`))
+	}
 }
 
 // handleStaticFiles serves static files like CSS and JS.

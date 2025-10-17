@@ -227,6 +227,24 @@ function showPage(pageNumber, rows, rowsPerPage, totalPages, infoElement) {
     });
 }
 
+// // Update chart to match search
+// function updateChartWithSearch(searchText, searchCol) {
+//     const params = new URLSearchParams();
+//     params.append('text', searchText);
+//     params.append('col', searchCol);
+
+//     fetch('/api/chart?' + params.toString())
+//         .then(response => {
+//             if (!response.ok) {
+//                 throw new Error('HTTP error ${response.status}')
+//             }
+//             return response.json();
+//         })
+//         .then(data => {
+
+//         })
+// }
+
 // Update chart with filter values
 function updateChartWithFilters(sponsor, study) {
     const params = new URLSearchParams();
@@ -395,5 +413,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const searchCol = document.getElementById('search-select');
 
         console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
+        if (searchText && searchCol) {
+            // updateChartWithSearch(searchText, searchCol);
+            updateSampleTable(searchText, searchCol);
+        }
     });
 });
