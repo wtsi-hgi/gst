@@ -26,12 +26,12 @@
 package server
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -39,11 +39,11 @@ import (
 	"github.com/wtsi-hgi/gst/db"
 )
 
-// .   go:embed static/*.html static/*.css static/*.js
-var staticFiles = os.DirFS("server/")
+// // .   go:embed static/*.html static/*.css static/*.js
+// var staticFiles = os.DirFS("server/")
 
-// //go:embed static/*.html static/*.css static/*.js
-// var staticFiles embed.FS
+//go:embed static/*.html static/*.css static/*.js
+var staticFiles embed.FS
 
 // Config holds configuration options for the Server.
 type Config struct {
@@ -98,8 +98,12 @@ func New(config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to access static files: %w", err)
 	}
 
-	// Load and parse templates
-	tmpl, err := template.ParseFS(staticFiles, "static/*.html")
+	// fmt.Println("DEBUG: staticFiles: ", staticFiles)
+	// fmt.Println("DEBUG: ", staticDir)
+
+	// Load and parse templates from the static sub-directory
+	// Use the sub filesystem we created above so patterns match correctly.
+	tmpl, err := template.ParseFS(staticDir, "*.html")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse templates: %w", err)
 	}
