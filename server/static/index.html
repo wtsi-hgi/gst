@@ -42,15 +42,16 @@
     <div class="filters">
         <div class="filter-group">
             <label> Search by.. </label>
-            <input type="search" id="query" name="q" placeholder="Search...">
+            <input type="search" id="query" name="q" placeholder="Search..." name="searchText">
             <select for="search-select" hx-get="/search/options" 
             hx-target="#search-select" hx-trigger="#apply-filters click"
-            id="search-select" name="search" disabled>
+            id="search-select" name="searchCol" disabled>
                 <option value=""> Select an option.. </option>
             </select>
         </div>
         <div class="search-button">
-            <button id="apply-search" hx-trigger="click" disabled>
+            <button id="apply-search" hx-trigger="click" 
+            hx-include="[name='searchCol'],[name='searchText']" disabled>
                 Apply
             </button>
         </div>

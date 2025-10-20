@@ -164,7 +164,7 @@ func (s *Server) handleSearchOptions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, opt := range options {
-		w.Write([]byte(`<option value="` + opt + `">` + opt + `</option>`))
+		w.Write([]byte(`<option value="` + opt + `">` + opt + `</option>`)) //nolint:errcheck
 	}
 }
 
@@ -209,6 +209,10 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	// Get required filter parameters
 	sponsor := r.URL.Query().Get("sponsor")
 	study := r.URL.Query().Get("study")
+	searchCol := r.URL.Query().Get("searchCol")
+	searchText := r.URL.Query().Get("searchText")
+
+	fmt.Println("DEBUG: col: ", searchCol, "text: ", searchText)
 
 	// Ensure both filters are provided
 	if sponsor == "" || study == "" {
@@ -237,7 +241,9 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply filters (now both are required)
+	// Apply search
+	// searchSortedSamples := SearchSamples(samplesData.Samples, searchText, searchCol)
+	// Apply filters
 	filteredSamples := FilterSamples(samplesData.Samples, sponsor, study)
 
 	// Create template data
