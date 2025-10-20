@@ -132,7 +132,8 @@ class hotbarClass {
         this.totalPages = totalPages;
         this.visibleCount = visiblecount;
         this.selectedIndex = 1;
-        this.leftmostIndex = 0;
+        this.leftmostIndex = 1;
+        this.rightmostIndex = visiblecount;
 
         this.buttonMap = new Map();
         this._buildMap();
@@ -164,18 +165,49 @@ class hotbarClass {
     selectIndex(index) {
         console.log("select index called for index", index)
         if (this.selectIndex != index) {
-            var prev = this.getSelected()
+            // Update selected index active status
+            const prev = this.getSelected();
             this.selectedIndex = index;
             prev.classList.remove('active');
-            var next = this.getSelected()
+            const next = this.getSelected();
             next.classList.add('active');
 
-            // TODO: Make visible buttons update 
+            // Update boundary indexes to maintain selected index near middle
+            let middle = Math.floor(this.visibleCount / 2)
+            let newLeftmost = this.selectedIndex - middle;
+            newLeftmost = Math.max(0, newLeftmost);
+            newLeftmost = Math.min(newLeftmost, this.buttonMap.size-this.visibleCount);
+            let newRightmost = newLeftmost+this.visibleCount;
+
+            // Update button visibility
+            const difference = next.textContent - prev.textContent;
+            
+            if (difference > 0) { // Moving right
+                for (let i = this.leftmostIndex; i < newLeftmost; i++) {
+                    const left = this.buttonMap.get(i);
+                    if (left) left.hidden = true;
+                    const right = this.buttonMap.get(i+this.visibleCount);
+                    if (right) right.hidden = false;
+                }
+            } else if (difference < 0) { // Moving left
+                for(let i = this.rightmostIndex; i > newRightmost; i--) {
+                    const right = this.buttonMap.get(i);
+                    if (right) right.hidden = true;
+                    const left = this.buttonMap.get(i-this.visibleCount);
+                    if (left) left.hidden = false;
+                }
+            }
+            
+            this.leftmostIndex = newLeftmost;
+            this.rightmostIndex = newRightmost;
         }
     }
 
     // TODO: re-add prev & next buttons, maybe change functionality? consider what
     // is appropriate.
+
+    // TODO: add tests? is this possible since this is js based? does this imply
+    // that this should be processed server side ? 
 
     // TODO: Add option to type page num?
 }
@@ -200,7 +232,7 @@ function initPagination() {
     const paginationContainer = document.createElement('div');
     paginationContainer.className = 'pagination';
 
-    hotbar = new hotbarClass(paginationContainer, totalPages, 5)
+    hotbar = new hotbarClass(paginationContainer, totalPages, 10)
     // paginationContainer.appendChild(hotbar)
 
     // Add prev button
