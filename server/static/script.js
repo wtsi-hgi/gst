@@ -140,6 +140,15 @@ class hotbarClass {
     }
 
     _buildMap(){
+        // Add prev button
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = '&laquo;';
+        prevButton.className = 'pagination-button';
+        prevButton.disabled = true;
+        this.paginationContainer.appendChild(prevButton);
+        this.backButton = prevButton;
+
+        // Add page select buttons
         for (let i = 1; i <= this.totalPages; i++) {
             const pageButton = document.createElement('button');
             pageButton.textContent = i;
@@ -156,10 +165,25 @@ class hotbarClass {
 
             this.buttonMap.set(i, pageButton)
         }
+
+        // Add next button
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = '&raquo;';
+        nextButton.className = 'pagination-button';
+        this.paginationContainer.appendChild(nextButton);
+        this.nextButton = nextButton;
     }
 
     getSelected() {
         return this.buttonMap.get(this.selectedIndex);
+    }
+
+    getBackButton() {
+        return this.backButton;
+    }
+
+    getNextButton() {
+        return this.nextButton;
     }
 
     selectIndex(index) {
@@ -233,29 +257,6 @@ function initPagination() {
     paginationContainer.className = 'pagination';
 
     hotbar = new hotbarClass(paginationContainer, totalPages, 10)
-    // paginationContainer.appendChild(hotbar)
-
-    // Add prev button
-    // const prevButton = document.createElement('button');
-    // prevButton.innerHTML = '&laquo;';
-    // prevButton.className = 'pagination-button';
-    // prevButton.disabled = true;
-    // paginationContainer.appendChild(prevButton);
-
-    // // Add page buttons
-    // for (let i = 1; i <= totalPages; i++) {
-    //     const pageButton = document.createElement('button');
-    //     pageButton.textContent = i;
-    //     pageButton.className = i === 1 ? 'pagination-button active' : 'pagination-button';
-    //     pageButton.dataset.page = i;
-    //     paginationContainer.appendChild(pageButton);
-    // }
-
-    // // Add next button
-    // const nextButton = document.createElement('button');
-    // nextButton.innerHTML = '&raquo;';
-    // nextButton.className = 'pagination-button';
-    // paginationContainer.appendChild(nextButton);
 
     // Add pagination container after the table
     tableBody.parentElement.after(paginationInfo);
@@ -265,8 +266,8 @@ function initPagination() {
     showPage(1, rows, rowsPerPage, totalPages, paginationInfo);
 
     // Add event listeners for pagination buttons
-    prevButton = 0;
-    nextButton = 0;
+    prevButton = hotbar.getBackButton();
+    nextButton = hotbar.getNextButton();
     addPaginationEventListeners(paginationContainer, rows, rowsPerPage, totalPages, paginationInfo, prevButton, nextButton);
 }
 
@@ -278,22 +279,25 @@ function addPaginationEventListeners(paginationContainer, rows, rowsPerPage, tot
 
         const currentPage = parseInt(document.querySelector('.pagination-button.active').dataset.page) || 1;
         let targetPage = currentPage;
+        let nextButton = hotbar.getNextButton();
+        let prevButton = hotbar.getBackButton();
 
-        // if (e.target === prevButton && currentPage > 1) {
-        //     targetPage = currentPage - 1;
-        // } else if (e.target === nextButton && currentPage < totalPages) {
-        //     targetPage = currentPage + 1;
-        // } else if (e.target.dataset.page) {
-        targetPage = parseInt(e.target.dataset.page);
-        // }
+        if (e.target === prevButton && currentPage > 1) {
+            targetPage = currentPage - 1;
+        } else if (e.target === nextButton && currentPage < totalPages) {
+            targetPage = currentPage + 1;
+        } else if (e.target.dataset.page) {
+            targetPage = parseInt(e.target.dataset.page);
+        }
 
         if (targetPage !== currentPage) {
             // Update active button
             hotbar.selectIndex(targetPage)
 
-        //     // Update prev/next button state
-        //     // prevButton.disabled = targetPage === 1;
-        //     // nextButton.disabled = targetPage === totalPages;
+            // Update prev/next button state
+            prevButton.disabled = targetPage === 1;
+            nextButton.disabled = targetPage === totalPages;
+            
             showPage(targetPage, rows, rowsPerPage, totalPages, paginationInfo);
         }
     });
