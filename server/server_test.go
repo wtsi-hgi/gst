@@ -263,5 +263,72 @@ func TestServer(t *testing.T) {
 				So(body, ShouldNotContainSubstring, "SANG456")
 			})
 		})
+
+		Convey("When requesting the search by options", func() {
+			req := httptest.NewRequest("GET", "/search/options", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("It should return the correct html option list", func() {
+				expected := `<option value="Sanger Sample ID">Sanger Sample ID</option>` +
+					`<option value="Supplier Name">Supplier Name</option>` +
+					`<option value="Manifest Created">Manifest Created</option>` +
+					`<option value="Manifest Uploaded">Manifest Uploaded</option>` +
+					`<option value="Labware Received">Labware Received</option>` +
+					`<option value="Plate/Tube">Plate/Tube</option>` +
+					`<option value="Order Made">Order Made</option>` +
+					`<option value="Library Start">Library Start</option>` +
+					`<option value="Library Complete">Library Complete</option>` +
+					`<option value="Library Time">Library Time</option>` +
+					`<option value="Run ID">Run ID</option>` +
+					`<option value="Platform">Platform</option>` +
+					`<option value="Pipeline">Pipeline</option>` +
+					`<option value="Sequencing Run Start">Sequencing Run Start</option>` +
+					`<option value="Sequencing QC Complete">Sequencing QC Complete</option>` +
+					`<option value="Sequencing Time">Sequencing Time</option>` +
+					`<option value="QC Pass">QC Pass</option>`
+
+				So(resp.Body.String(), ShouldEqual, expected)
+			})
+		})
+
+		Convey("When requesting the apply search API without search paramaters", func() {
+			req := httptest.NewRequest("GET", "/api/chart/apply/search", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("It should indicate that search criteria is required", func() {
+				body := resp.Body.String()
+				So(body, ShouldContainSubstring, "Please select")
+			})
+		})
+
+		Convey("When requesting the apply search API with text and col parameters", func() {
+			req := httptest.NewRequest("GET", "/api/chart/apply/search?searchText=23&searchCol=StudyID", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("The chart should only display rows in which the column selected contans the given substring", func() {
+				body := resp.Body.String()
+
+				So(body, ShouldContainSubstring, "Test Study")
+				So(body, ShouldNotContainSubstring, "Another Test Study")
+			})
+		})
 	})
 }

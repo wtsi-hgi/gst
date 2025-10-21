@@ -134,6 +134,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/filters", s.handleFilters)
 	s.mux.HandleFunc("/api/studies", s.handleStudies)
 	s.mux.HandleFunc("/search/options", s.handleSearchOptions)
+	s.mux.HandleFunc("/api/chart/applysearch", s.handleApplySearch)
 
 	// Static files route
 	s.mux.HandleFunc("/static/", s.handleStaticFiles)
@@ -209,10 +210,6 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	// Get required filter parameters
 	sponsor := r.URL.Query().Get("sponsor")
 	study := r.URL.Query().Get("study")
-	searchCol := r.URL.Query().Get("searchCol")
-	searchText := r.URL.Query().Get("searchText")
-
-	fmt.Println("DEBUG: col: ", searchCol, "text: ", searchText)
 
 	// Ensure both filters are provided
 	if sponsor == "" || study == "" {
@@ -261,6 +258,25 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error rendering template: %v", err),
 			http.StatusInternalServerError)
 	}
+}
+
+func (s *Server) handleApplySearch(w http.ResponseWriter, r *http.Request) {
+	sponsor := r.URL.Query().Get("sponsor")
+	study := r.URL.Query().Get("study")
+	text := r.URL.Query().Get("searchText")
+	col := r.URL.Query().Get("searchCol")
+
+	fmt.Println("Sponsor: ", sponsor, "Study:", study, "text: ", text, "col: ", col)
+
+	// Marshal directly for better control
+	jsonData, err := json.Marshal("temp response")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error encoding JSON: %v", err),
+			http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData) //nolint:errcheck
 }
 
 // handleChart provides JSON data for the Chart.js visualization.

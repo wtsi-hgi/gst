@@ -187,7 +187,6 @@ class hotbarClass {
     }
 
     selectIndex(index) {
-        console.log("select index called for index", index)
         if (this.selectIndex != index) {
             // Update selected index active status
             const prev = this.getSelected();
@@ -226,9 +225,6 @@ class hotbarClass {
             this.rightmostIndex = newRightmost;
         }
     }
-
-    // TODO: re-add prev & next buttons, maybe change functionality? consider what
-    // is appropriate.
 
     // TODO: add tests? is this possible since this is js based? does this imply
     // that this should be processed server side ? 
@@ -274,7 +270,6 @@ function initPagination() {
 // Add event listeners to pagination buttons
 function addPaginationEventListeners(paginationContainer, rows, rowsPerPage, totalPages, paginationInfo, prevButton, nextButton) {
     paginationContainer.addEventListener('click', function (e) {
-        console.log("clicked")
         if (e.target.tagName !== 'BUTTON') return;
 
         const currentPage = parseInt(document.querySelector('.pagination-button.active').dataset.page) || 1;
@@ -297,7 +292,7 @@ function addPaginationEventListeners(paginationContainer, rows, rowsPerPage, tot
             // Update prev/next button state
             prevButton.disabled = targetPage === 1;
             nextButton.disabled = targetPage === totalPages;
-            
+
             showPage(targetPage, rows, rowsPerPage, totalPages, paginationInfo);
         }
     });
@@ -318,23 +313,29 @@ function showPage(pageNumber, rows, rowsPerPage, totalPages, infoElement) {
     });
 }
 
-// // Update chart to match search
-// function updateChartWithSearch(searchText, searchCol) {
-//     const params = new URLSearchParams();
-//     params.append('text', searchText);
-//     params.append('col', searchCol);
+// Update chart to match search
+function updateChartWithSearch(searchText, searchCol, sponsor, study) {
+    const params = new URLSearchParams();
+    params.append('searchText', searchText);
+    params.append('searchCol', searchCol);
+    params.append('sponsor', sponsor);
+    params.append('study', study);
 
-//     fetch('/api/chart?' + params.toString())
-//         .then(response => {
-//             if (!response.ok) {
-//                 throw new Error('HTTP error ${response.status}')
-//             }
-//             return response.json();
-//         })
-//         .then(data => {
-
-//         })
-// }
+    fetch('/api/chart/applysearch?' + params.toString())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP error ${response.status}')
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("data: ", data)
+        })
+        .catch(error => {
+            console.error("Error applying search criteria:", error);
+            alert("Failed to apply search. Please try again.");
+        });
+}
 
 // Update chart with filter values
 function updateChartWithFilters(sponsor, study) {
@@ -391,24 +392,23 @@ function createChart(data) {
                     label: 'Library Time',
                     data: data.libraryTime,
                     backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
                 },
                 {
                     label: 'Sequencing Time',
                     data: data.sequencingTime,
                     backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
                 }
             ]
         },
         options: {
             animation: false,
             indexAxis: 'y',
+            maintainAspectRatio: false,
+            responsive: true,
             scales: {
                 x: {
                     stacked: true,
+                    max: Math.max(...data.libraryTime, ...data.sequencingTime),
                     title: {
                         display: true,
                         text: 'Days'
@@ -502,11 +502,13 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('apply-search').addEventListener('click', function () {
         const searchText = document.getElementById('query');
         const searchCol = document.getElementById('search-select');
+        const sponsor = document.getElementById('sponsor-select').value;
+        const study = document.getElementById('study-select').value;
 
         console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
         if (searchText && searchCol) {
-            // updateChartWithSearch(searchText, searchCol);
-            // updateSampleTable(searchText, searchCol);
+            
+            updateChartWithSearch(searchText.value, searchCol.value, sponsor, study)
         }
     });
 });
