@@ -59,7 +59,7 @@ func getAvailablePort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close()
+	defer l.Close() //nolint:errcheck
 
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
@@ -83,6 +83,29 @@ func TestServer(t *testing.T) {
 					FacultySponsor:       "Test Sponsor",
 					Programme:            "Test Programme",
 					SangerSampleID:       "SANG123",
+					SupplierName:         "Test Supplier",
+					ManifestCreated:      &sampleTime,
+					ManifestUploaded:     &sampleTime,
+					LabwareReceived:      &sampleTime,
+					LabwareHumanBarcode:  "PLATE001",
+					OrderMade:            &sampleTime,
+					LibraryStart:         &sampleTime,
+					LibraryComplete:      &sampleTime,
+					LibraryTime:          &libraryTime,
+					RunID:                "RUN001",
+					Platform:             "Illumina",
+					Pipeline:             "Pipeline1",
+					SequencingRunStart:   &sampleTime,
+					SequencingQCComplete: &sampleTime,
+					SequencingTime:       &seqTime,
+					QCPass:               "1",
+				},
+				{
+					StudyID:              "1234",
+					StudyName:            "Test Study",
+					FacultySponsor:       "Test Sponsor",
+					Programme:            "Test Programme",
+					SangerSampleID:       "SANG3456",
 					SupplierName:         "Test Supplier",
 					ManifestCreated:      &sampleTime,
 					ManifestUploaded:     &sampleTime,
@@ -221,6 +244,42 @@ func TestServer(t *testing.T) {
 				So(body, ShouldContainSubstring, "SANG123")
 				So(body, ShouldNotContainSubstring, "SANG456")
 			})
+
+			Convey("With both search parameters", func() {
+				req := httptest.NewRequest("GET", "/api/samples?sponsor=Test+Sponsor&study=Test+Study&searchText=23&searchCol=SangerSampleID", nil)
+				resp := httptest.NewRecorder()
+
+				srv.ServeHTTP(resp, req)
+
+				Convey("It should return 200 OK", func() {
+					So(resp.Code, ShouldEqual, http.StatusOK)
+				})
+
+				Convey("The chart should only display rows in which the column selected contans the given substring", func() {
+					body := resp.Body.String()
+
+					So(body, ShouldContainSubstring, "SANG123")
+					So(body, ShouldNotContainSubstring, "SANG3456")
+				})
+			})
+
+			Convey("With only one search parameter", func() {
+				req := httptest.NewRequest("GET", "/api/samples?sponsor=Test+Sponsor&study=Test+Study&searchText=23", nil)
+				resp := httptest.NewRecorder()
+
+				srv.ServeHTTP(resp, req)
+
+				Convey("It should return 200 OK", func() {
+					So(resp.Code, ShouldEqual, http.StatusOK)
+				})
+
+				Convey("It should indicate that both search text and column are required to search", func() {
+					body := resp.Body.String()
+
+					So(body, ShouldContainSubstring, "Please select")
+					So(body, ShouldNotContainSubstring, "SANG123")
+				})
+			})
 		})
 
 		Convey("When requesting the chart data API endpoint without required parameters", func() {
@@ -297,38 +356,38 @@ func TestServer(t *testing.T) {
 			})
 		})
 
-		Convey("When requesting the apply search API without search paramaters", func() {
-			req := httptest.NewRequest("GET", "/api/chart/apply/search", nil)
-			resp := httptest.NewRecorder()
+		// Convey("When requesting the apply search API without search paramaters", func() {
+		// 	req := httptest.NewRequest("GET", "/api/chart/applysearch", nil)
+		// 	resp := httptest.NewRecorder()
 
-			srv.ServeHTTP(resp, req)
+		// 	srv.ServeHTTP(resp, req)
 
-			Convey("It should return 200 OK", func() {
-				So(resp.Code, ShouldEqual, http.StatusOK)
-			})
+		// 	Convey("It should return 200 OK", func() {
+		// 		So(resp.Code, ShouldEqual, http.StatusOK)
+		// 	})
 
-			Convey("It should indicate that search criteria is required", func() {
-				body := resp.Body.String()
-				So(body, ShouldContainSubstring, "Please select")
-			})
-		})
+		// 	Convey("It should indicate that search criteria is required", func() {
+		// 		body := resp.Body.String()
+		// 		So(body, ShouldContainSubstring, "Please select")
+		// 	})
+		// })
 
-		Convey("When requesting the apply search API with text and col parameters", func() {
-			req := httptest.NewRequest("GET", "/api/chart/apply/search?searchText=23&searchCol=StudyID", nil)
-			resp := httptest.NewRecorder()
+		// Convey("When requesting the apply search API with text and col parameters", func() {
+		// 	req := httptest.NewRequest("GET", "/api/chart/applysearch?sponsor=Test+Sponsor&study=Test+Study&searchText=23&searchCol=StudyID", nil)
+		// 	resp := httptest.NewRecorder()
 
-			srv.ServeHTTP(resp, req)
+		// 	srv.ServeHTTP(resp, req)
 
-			Convey("It should return 200 OK", func() {
-				So(resp.Code, ShouldEqual, http.StatusOK)
-			})
+		// 	Convey("It should return 200 OK", func() {
+		// 		So(resp.Code, ShouldEqual, http.StatusOK)
+		// 	})
 
-			Convey("The chart should only display rows in which the column selected contans the given substring", func() {
-				body := resp.Body.String()
+		// 	Convey("The chart should only display rows in which the column selected contans the given substring", func() {
+		// 		body := resp.Body.String()
 
-				So(body, ShouldContainSubstring, "Test Study")
-				So(body, ShouldNotContainSubstring, "Another Test Study")
-			})
-		})
+		// 		So(body, ShouldContainSubstring, "Test Study")
+		// 		So(body, ShouldNotContainSubstring, "Another Test Study")
+		// 	})
+		// })
 	})
 }

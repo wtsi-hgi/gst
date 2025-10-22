@@ -50,8 +50,8 @@
             </select>
         </div>
         <div class="search-button">
-            <button id="apply-search" hx-trigger="click" 
-            hx-include="[name='searchCol'],[name='searchText']" disabled>
+            <button id="apply-search" hx-trigger="click" hx-get="/api/samples" hx-target="#samples-container"
+            hx-include="[name='searchCol'],[name='searchText'],[name='sponsor'],[name='study']" disabled>
                 Apply
             </button>
         </div>

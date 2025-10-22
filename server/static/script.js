@@ -294,6 +294,8 @@ function addPaginationEventListeners(paginationContainer, rows, rowsPerPage, tot
             nextButton.disabled = targetPage === totalPages;
 
             showPage(targetPage, rows, rowsPerPage, totalPages, paginationInfo);
+            // Fix view to bottom of the page, undos scroll jumps
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' });
         }
     });
 }
@@ -499,16 +501,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Apply search handler
-    document.getElementById('apply-search').addEventListener('click', function () {
-        const searchText = document.getElementById('query');
-        const searchCol = document.getElementById('search-select');
-        const sponsor = document.getElementById('sponsor-select').value;
-        const study = document.getElementById('study-select').value;
+    // document.getElementById('apply-search').addEventListener('click', function () {
+    //     const searchText = document.getElementById('query');
+    //     const searchCol = document.getElementById('search-select');
+    //     const sponsor = document.getElementById('sponsor-select').value;
+    //     const study = document.getElementById('study-select').value;
 
-        console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
-        if (searchText && searchCol) {
+    //     console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
+    //     if (searchText && searchCol) {
             
-            updateChartWithSearch(searchText.value, searchCol.value, sponsor, study)
-        }
-    });
+    //         updateChartWithSearch(searchText.value, searchCol.value, sponsor, study)
+    //     }
+    // });
 });

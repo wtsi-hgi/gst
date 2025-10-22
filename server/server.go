@@ -134,7 +134,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/filters", s.handleFilters)
 	s.mux.HandleFunc("/api/studies", s.handleStudies)
 	s.mux.HandleFunc("/search/options", s.handleSearchOptions)
-	s.mux.HandleFunc("/api/chart/applysearch", s.handleApplySearch)
+	// s.mux.HandleFunc("/api/chart/applysearch", s.handleApplySearch)
 
 	// Static files route
 	s.mux.HandleFunc("/static/", s.handleStaticFiles)
@@ -207,9 +207,16 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 // handleSamples serves the HTML table of sample data.
 func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
+	// fmt.Println("does this line run?")
+
 	// Get required filter parameters
 	sponsor := r.URL.Query().Get("sponsor")
 	study := r.URL.Query().Get("study")
+	// Get optional search parameters
+	text := r.URL.Query().Get("searchText")
+	col := r.URL.Query().Get("searchCol")
+
+	// fmt.Println("text: ", text, "col: ", col)
 
 	// Ensure both filters are provided
 	if sponsor == "" || study == "" {
@@ -238,10 +245,17 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply search
-	// searchSortedSamples := SearchSamples(samplesData.Samples, searchText, searchCol)
 	// Apply filters
 	filteredSamples := FilterSamples(samplesData.Samples, sponsor, study)
+
+	// fmt.Println("1) filteredSamples: ", filteredSamples)
+
+	// Apply search criteria
+	if text != "" && col != "" {
+		filteredSamples = ApplySearch(filteredSamples, text, col)
+	}
+
+	// fmt.Println("2) filteredSamples: ", filteredSamples)
 
 	// Create template data
 	templateData := struct {
@@ -260,24 +274,11 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleApplySearch(w http.ResponseWriter, r *http.Request) {
-	sponsor := r.URL.Query().Get("sponsor")
-	study := r.URL.Query().Get("study")
-	text := r.URL.Query().Get("searchText")
-	col := r.URL.Query().Get("searchCol")
+// TODO: implement search
+// func (s *Server) ApplySearch(filteredSampels []db.TrackedSample, text, col string) {
+// 	// fmt.Println("text: ", text, "col: ", col)
 
-	fmt.Println("Sponsor: ", sponsor, "Study:", study, "text: ", text, "col: ", col)
-
-	// Marshal directly for better control
-	jsonData, err := json.Marshal("temp response")
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error encoding JSON: %v", err),
-			http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(jsonData) //nolint:errcheck
-}
+// }
 
 // handleChart provides JSON data for the Chart.js visualization.
 func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
@@ -355,7 +356,7 @@ func (s *Server) handleFilters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(jsonData)
+	w.Write(jsonData) //nolint:errcheck
 }
 
 // handleStudies provides a list of studies for a given faculty sponsor.
@@ -396,7 +397,7 @@ func (s *Server) handleStudies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(jsonData)
+	w.Write(jsonData) //nolint:errcheck
 }
 
 // prepareChartData converts sample data into a format suitable for Chart.js.

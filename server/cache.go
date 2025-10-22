@@ -118,7 +118,7 @@ func GetStudiesForSponsor(samples []db.TrackedSample, sponsor string) []string {
 	return studies
 }
 
-// FilterSamples filters samples by faculty sponsor and optionally by study name.
+// FilterSamples filters samples by faculty sponsor and study name.
 func FilterSamples(samples []db.TrackedSample, sponsor, study string) []db.TrackedSample {
 	if sponsor == "" {
 		return samples
@@ -139,4 +139,8 @@ func FilterSamples(samples []db.TrackedSample, sponsor, study string) []db.Track
 	}
 
 	return filtered
+}
+
+func ApplySearch(samples []db.TrackedSample, text, col string) []db.TrackedSample {
+	return samples
 }
