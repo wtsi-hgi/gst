@@ -207,8 +207,6 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 // handleSamples serves the HTML table of sample data.
 func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
-	// fmt.Println("does this line run?")
-
 	// Get required filter parameters
 	sponsor := r.URL.Query().Get("sponsor")
 	study := r.URL.Query().Get("study")
@@ -216,7 +214,7 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	text := r.URL.Query().Get("searchText")
 	col := r.URL.Query().Get("searchCol")
 
-	// fmt.Println("text: ", text, "col: ", col)
+	fmt.Println("text: ", text, "col: ", col)
 
 	// Ensure both filters are provided
 	if sponsor == "" || study == "" {
