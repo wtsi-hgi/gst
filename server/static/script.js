@@ -121,7 +121,7 @@ function handleSampleDataLoaded(event) {
             // Initialize pagination if we have a table
             initPagination();
             // Update chart
-            updateChartWithFilters(sponsor, study);
+            // updateChartWithFilters(sponsor, study);
         }
     }
 }
@@ -323,7 +323,7 @@ function updateChartWithSearch(searchText, searchCol, sponsor, study) {
     params.append('sponsor', sponsor);
     params.append('study', study);
 
-    fetch('/api/chart/applysearch?' + params.toString())
+    fetch('/api/chart?' + params.toString())
         .then(response => {
             if (!response.ok) {
                 throw new Error('HTTP error ${response.status}')
@@ -331,7 +331,8 @@ function updateChartWithSearch(searchText, searchCol, sponsor, study) {
             return response.json();
         })
         .then(data => {
-            console.log("data: ", data)
+            console.log("calling update chart in update chart with search");
+            updateChart(data);
         })
         .catch(error => {
             console.error("Error applying search criteria:", error);
@@ -356,6 +357,7 @@ function updateChartWithFilters(sponsor, study) {
             // Show the chart and hide the instruction box
             document.querySelector('#chart-container .instruction-box').classList.add('hidden');
             document.getElementById('timingChart').classList.remove('hidden');
+            document.getElementById('chart-container').style.height = '1000px';
 
             updateChart(data);
         })
@@ -480,37 +482,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Process HTMX responses
     document.body.addEventListener('htmx:afterSwap', function (event) {
-        processStudiesResponse(event);
-        handleSampleDataLoaded(event);
+        processStudiesResponse(event); // TODO: get rid
+        handleSampleDataLoaded(event); // only pagination
     });
 
     // Apply filter handler - also updates the chart & enables search
     document.getElementById('apply-filters').addEventListener('click', function () {
+        console.log('filter button clicked');
         const sponsor = document.getElementById('sponsor-select').value;
         const study = document.getElementById('study-select').value;
-        const searchMenu = document.getElementById('search-select');
-        const searchButton = document.getElementById('apply-search');
+        const searchCol = document.getElementById('search-select');
+        const searchApplyButton = document.getElementById('apply-search');
 
         if (sponsor && study) {
             // HTMX will handle the sample table update
             // We manually trigger chart update here
             updateChartWithFilters(sponsor, study);
-            searchMenu.disabled = false;
-            searchButton.disabled = false;
+            searchCol.disabled = false;
+            searchApplyButton.disabled = false;
         }
     });
 
     // Apply search handler
-    // document.getElementById('apply-search').addEventListener('click', function () {
-    //     const searchText = document.getElementById('query');
-    //     const searchCol = document.getElementById('search-select');
-    //     const sponsor = document.getElementById('sponsor-select').value;
-    //     const study = document.getElementById('study-select').value;
+    document.getElementById('apply-search').addEventListener('click', function () {
+        console.log('search button clicked');
+        const searchText = document.getElementById('query');
+        const searchCol = document.getElementById('search-select');
+        const sponsor = document.getElementById('sponsor-select').value;
+        const study = document.getElementById('study-select').value;
 
-    //     console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
-    //     if (searchText && searchCol) {
-            
-    //         updateChartWithSearch(searchText.value, searchCol.value, sponsor, study)
-    //     }
-    // });
+        console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
+        if (searchText && searchCol) {
+            updateChartWithSearch(searchText.value, searchCol.value, sponsor, study)
+        }
+    });
 });

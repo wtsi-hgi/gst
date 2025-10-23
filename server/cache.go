@@ -26,7 +26,10 @@
 package server
 
 import (
+	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -141,6 +144,69 @@ func FilterSamples(samples []db.TrackedSample, sponsor, study string) []db.Track
 	return filtered
 }
 
+// TODO: Consider whether this could be merged into FilterSamples to reduce the
+// time complexity of handleSamples (since it calls both sequentially).
 func ApplySearch(samples []db.TrackedSample, text, col string) []db.TrackedSample {
-	return samples
+	if text == "" || col == "" {
+		return samples
+	}
+
+	var filtered []db.TrackedSample
+	text = strings.ToLower(text)
+
+	colMap := map[string]string{
+		"Sanger Sample ID":       "SangerSampleID",
+		"Supplier Name":          "SupplierName",
+		"Manifest Created":       "ManifestCreated",
+		"Manifest Uploaded":      "ManifestUploaded",
+		"Labware Received":       "LabwareReceived",
+		"Plate/Tube":             "LabwareHumanBarcode",
+		"Order Made":             "OrderMade",
+		"Library Start":          "LibraryStart",
+		"Library Complete":       "LibraryComplete",
+		"Library Time":           "LibraryTime",
+		"Run ID":                 "RunID",
+		"Platform":               "Platform",
+		"Pipeline":               "Pipeline",
+		"Sequencing Run Start":   "SequencingRunStart",
+		"Sequencing QC Complete": "SequencingQCComplete",
+		"Sequencing Time":        "SequencingTime",
+		"QC Pass":                "QCPass",
+	}
+
+	field := colMap[col]
+
+	for _, sample := range samples {
+		v := reflect.ValueOf(sample)
+		switch v := v.FieldByName(field).Interface().(type) {
+		case string:
+			if strings.Contains(v, text) {
+				filtered = append(filtered, sample)
+			}
+		case *time.Time:
+			if strings.Contains(v.Format(time.DateOnly), text) {
+				filtered = append(filtered, sample)
+			}
+		case *int:
+			if v != nil {
+				strInt := strconv.FormatInt(int64(*v), 10)
+				if strInt == text {
+					filtered = append(filtered, sample)
+				}
+			}
+		}
+		// fmt.Println("\n v: ", v, "\n field: ", field, "\n col: ", col)
+		// if !field.IsValid() {
+		// 	continue
+		// }
+
+		// if str, ok := field.Interface().(fmt.Stringer); ok {
+		// 	value := strings.ToLower(str.String())
+		// 	if strings.Contains(value, text) {
+		//
+		// 	}
+		// }
+	}
+
+	return filtered
 }

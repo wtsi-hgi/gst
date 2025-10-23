@@ -27,6 +27,7 @@ package server_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -246,7 +247,7 @@ func TestServer(t *testing.T) {
 			})
 
 			Convey("With both search parameters", func() {
-				req := httptest.NewRequest("GET", "/api/samples?sponsor=Test+Sponsor&study=Test+Study&searchText=23&searchCol=SangerSampleID", nil)
+				req := httptest.NewRequest("GET", "/api/samples?sponsor=Test+Sponsor&study=Test+Study&searchText=23&searchCol=Sanger%20Sample%20ID", nil)
 				resp := httptest.NewRecorder()
 
 				srv.ServeHTTP(resp, req)
@@ -257,6 +258,7 @@ func TestServer(t *testing.T) {
 
 				Convey("The chart should only display rows in which the column selected contans the given substring", func() {
 					body := resp.Body.String()
+					fmt.Println(body)
 
 					So(body, ShouldContainSubstring, "SANG123")
 					So(body, ShouldNotContainSubstring, "SANG3456")
@@ -276,7 +278,7 @@ func TestServer(t *testing.T) {
 				Convey("It should indicate that both search text and column are required to search", func() {
 					body := resp.Body.String()
 
-					So(body, ShouldContainSubstring, "Please select")
+					So(body, ShouldContainSubstring, "Please select") // May want to change this to alert instead
 					So(body, ShouldNotContainSubstring, "SANG123")
 				})
 			})

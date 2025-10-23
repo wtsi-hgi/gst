@@ -134,7 +134,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/filters", s.handleFilters)
 	s.mux.HandleFunc("/api/studies", s.handleStudies)
 	s.mux.HandleFunc("/search/options", s.handleSearchOptions)
-	// s.mux.HandleFunc("/api/chart/applysearch", s.handleApplySearch)
+	// s.mux.HandleFunc("/api/chart/applysearch", s.handleChart)
 
 	// Static files route
 	s.mux.HandleFunc("/static/", s.handleStaticFiles)
@@ -249,9 +249,7 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("1) filteredSamples: ", filteredSamples)
 
 	// Apply search criteria
-	if text != "" && col != "" {
-		filteredSamples = ApplySearch(filteredSamples, text, col)
-	}
+	filteredSamples = ApplySearch(filteredSamples, text, col)
 
 	// fmt.Println("2) filteredSamples: ", filteredSamples)
 
@@ -272,17 +270,15 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: implement search
-// func (s *Server) ApplySearch(filteredSampels []db.TrackedSample, text, col string) {
-// 	// fmt.Println("text: ", text, "col: ", col)
-
-// }
-
 // handleChart provides JSON data for the Chart.js visualization.
 func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 	// Get required filter parameters
 	sponsor := r.URL.Query().Get("sponsor")
 	study := r.URL.Query().Get("study")
+	// Get optional search parameters
+	text := r.URL.Query().Get("searchText")
+	col := r.URL.Query().Get("searchCol")
+	fmt.Println("HandleChart: text:", text, "col:", col)
 
 	// Return empty chart data if filters not provided
 	if sponsor == "" || study == "" {
@@ -311,6 +307,9 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 
 	// Apply filters
 	filteredSamples := FilterSamples(samplesData.Samples, sponsor, study)
+
+	// Apply search
+	filteredSamples = ApplySearch(filteredSamples, text, col)
 
 	// Prepare chart data
 	chartData := prepareChartData(filteredSamples)
