@@ -111,8 +111,7 @@ function processStudiesResponse(event) {
     }
 }
 
-// Handle sample data loading
-function handleSampleDataLoaded(event) {
+function handlePagination(event) {
     if (event.detail.target.id === 'samples-container') {
         const sponsor = document.getElementById('sponsor-select').value;
         const study = document.getElementById('study-select').value;
@@ -120,8 +119,6 @@ function handleSampleDataLoaded(event) {
         if (sponsor && study) {
             // Initialize pagination if we have a table
             initPagination();
-            // Update chart
-            // updateChartWithFilters(sponsor, study);
         }
     }
 }
@@ -225,11 +222,6 @@ class hotbarClass {
             this.rightmostIndex = newRightmost;
         }
     }
-
-    // TODO: add tests? is this possible since this is js based? does this imply
-    // that this should be processed server side ? 
-
-    // TODO: Add option to type page num?
 }
 
 var hotbar;
@@ -331,7 +323,6 @@ function updateChartWithSearch(searchText, searchCol, sponsor, study) {
             return response.json();
         })
         .then(data => {
-            console.log("calling update chart in update chart with search");
             updateChart(data);
         })
         .catch(error => {
@@ -357,7 +348,7 @@ function updateChartWithFilters(sponsor, study) {
             // Show the chart and hide the instruction box
             document.querySelector('#chart-container .instruction-box').classList.add('hidden');
             document.getElementById('timingChart').classList.remove('hidden');
-            document.getElementById('chart-container').style.height = '1000px';
+            // document.getElementById('chart-container').style.height = '1000px';
 
             updateChart(data);
         })
@@ -380,10 +371,19 @@ function updateChart(data) {
 
 function createChart(data) {
     // Check if we have data to display
+    const infoBoxChart = document.querySelector('#chart-container .instruction-box');
+
     if (!data.labels || data.labels.length === 0) {
-        console.log("No chart data available");
+        // Update chart info box to reflect lack of results.
+        document.getElementById('chart-container').style.height = '100px';
+        infoBoxChart.classList.remove('hidden');
+        infoBoxChart.innerHTML = 'No results found.'
         return;
     }
+
+    infoBoxChart.classList.add('hidden');
+    // infoBoxTable.classList.add('hidden');
+    document.getElementById('chart-container').style.height = '1000px';
 
     const ctx = document.getElementById('timingChart').getContext('2d');
 
@@ -393,6 +393,16 @@ function createChart(data) {
             labels: data.labels, // Using supplier names as labels
             datasets: [
                 {
+                    label: 'Manifest upload time',
+                    data: data.manifestTime,
+                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                },
+                {
+                    label: 'Order made -> library start',
+                    data: data.orderGapTime,
+                    backgroundColor: 'rgba(153, 102, 255, 0.7)',
+                },
+                {
                     label: 'Library Time',
                     data: data.libraryTime,
                     backgroundColor: 'rgba(54, 162, 235, 0.7)',
@@ -401,7 +411,7 @@ function createChart(data) {
                     label: 'Sequencing Time',
                     data: data.sequencingTime,
                     backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                }
+                },
             ]
         },
         options: {
@@ -412,7 +422,6 @@ function createChart(data) {
             scales: {
                 x: {
                     stacked: true,
-                    max: Math.max(...data.libraryTime, ...data.sequencingTime),
                     title: {
                         display: true,
                         text: 'Days'
@@ -468,7 +477,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Enable apply button when both selections are made
+    // Enable apply search button only when both search fields are populated
+    const searchTextInput = document.getElementById('query');
+    const searchMenuInput = document.getElementById('search-select');
+    
+    function checkSearchFields() {
+        const applySearchButton = document.getElementById('apply-search');
+        if (searchMenuInput.value && searchTextInput.value.trim()) {
+            applySearchButton.disabled = false;
+            return
+        }
+
+        applySearchButton.disabled = true;
+    }
+
+    searchTextInput.addEventListener("input", checkSearchFields);
+    searchMenuInput.addEventListener("change", checkSearchFields);
+
+    // Enable apply filter apply button when both selections are made
     document.getElementById('study-select').addEventListener('change', function () {
         const sponsorSelect = document.getElementById('sponsor-select');
         const applyButton = document.getElementById('apply-filters');
@@ -480,15 +506,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Process JSON study data and populate HTML on HTMX request
+    document.getElementById('sponsor-select').addEventListener('htmx:afterRequest', processStudiesResponse);
+
     // Process HTMX responses
     document.body.addEventListener('htmx:afterSwap', function (event) {
-        processStudiesResponse(event); // TODO: get rid
-        handleSampleDataLoaded(event); // only pagination
+        handlePagination(event); // only pagination
     });
 
     // Apply filter handler - also updates the chart & enables search
     document.getElementById('apply-filters').addEventListener('click', function () {
-        console.log('filter button clicked');
         const sponsor = document.getElementById('sponsor-select').value;
         const study = document.getElementById('study-select').value;
         const searchCol = document.getElementById('search-select');
@@ -505,13 +532,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Apply search handler
     document.getElementById('apply-search').addEventListener('click', function () {
-        console.log('search button clicked');
         const searchText = document.getElementById('query');
         const searchCol = document.getElementById('search-select');
         const sponsor = document.getElementById('sponsor-select').value;
         const study = document.getElementById('study-select').value;
 
-        console.log("DEBUG: searchText: ", searchText.value, " searchCol: ", searchCol.value);
         if (searchText && searchCol) {
             updateChartWithSearch(searchText.value, searchCol.value, sponsor, study)
         }

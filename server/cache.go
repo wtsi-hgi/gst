@@ -195,17 +195,6 @@ func ApplySearch(samples []db.TrackedSample, text, col string) []db.TrackedSampl
 				}
 			}
 		}
-		// fmt.Println("\n v: ", v, "\n field: ", field, "\n col: ", col)
-		// if !field.IsValid() {
-		// 	continue
-		// }
-
-		// if str, ok := field.Interface().(fmt.Stringer); ok {
-		// 	value := strings.ToLower(str.String())
-		// 	if strings.Contains(value, text) {
-		//
-		// 	}
-		// }
 	}
 
 	return filtered

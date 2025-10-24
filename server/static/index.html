@@ -43,7 +43,7 @@
         <div class="filter-group">
             <label> Search by </label>
             <input type="search" id="query" placeholder="Search..." name="searchText">
-            <select for="search-select" hx-get="/search/options" 
+            <select for="search-select" hx-get="/api/searchoptions" 
             hx-target="#search-select" hx-trigger="#apply-filters click"
             id="search-select" name="searchCol" disabled>
                 <option value=""> Select an option.. </option>
@@ -69,7 +69,7 @@
     </div>
 
     <h2>Sample Data</h2>
-    <div id="samples-container">
+    <div class='samples-container' id="samples-container">
         <div class="instruction-box">
             Please select a Faculty Sponsor and Study to view sample data.
         </div>

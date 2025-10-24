@@ -39,9 +39,6 @@ import (
 	"github.com/wtsi-hgi/gst/db"
 )
 
-// // .   go:embed static/*.html static/*.css static/*.js
-// var staticFiles = os.DirFS("server/")
-
 //go:embed static/*.html static/*.css static/*.js
 var staticFiles embed.FS
 
@@ -70,6 +67,8 @@ type Server struct {
 type ChartData struct {
 	Labels         []string `json:"labels"`
 	SampleIds      []string `json:"sampleIds"`
+	ManifestTime   []int    `json:"manifestTime"`
+	OrderGapTime   []int    `json:"orderGapTime"`
 	LibraryTime    []int    `json:"libraryTime"`
 	SequencingTime []int    `json:"sequencingTime"`
 }
@@ -97,9 +96,6 @@ func New(config Config) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to access static files: %w", err)
 	}
-
-	// fmt.Println("DEBUG: staticFiles: ", staticFiles)
-	// fmt.Println("DEBUG: ", staticDir)
 
 	// Load and parse templates from the static sub-directory
 	// Use the sub filesystem we created above so patterns match correctly.
@@ -133,8 +129,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/chart", s.handleChart)
 	s.mux.HandleFunc("/api/filters", s.handleFilters)
 	s.mux.HandleFunc("/api/studies", s.handleStudies)
-	s.mux.HandleFunc("/search/options", s.handleSearchOptions)
-	// s.mux.HandleFunc("/api/chart/applysearch", s.handleChart)
+	s.mux.HandleFunc("/api/searchoptions", s.handleSearchOptions)
 
 	// Static files route
 	s.mux.HandleFunc("/static/", s.handleStaticFiles)
@@ -214,8 +209,6 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	text := r.URL.Query().Get("searchText")
 	col := r.URL.Query().Get("searchCol")
 
-	fmt.Println("text: ", text, "col: ", col)
-
 	// Ensure both filters are provided
 	if sponsor == "" || study == "" {
 		// Return template with HasData = false
@@ -246,12 +239,8 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	// Apply filters
 	filteredSamples := FilterSamples(samplesData.Samples, sponsor, study)
 
-	// fmt.Println("1) filteredSamples: ", filteredSamples)
-
 	// Apply search criteria
 	filteredSamples = ApplySearch(filteredSamples, text, col)
-
-	// fmt.Println("2) filteredSamples: ", filteredSamples)
 
 	// Create template data
 	templateData := struct {
@@ -278,13 +267,14 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 	// Get optional search parameters
 	text := r.URL.Query().Get("searchText")
 	col := r.URL.Query().Get("searchCol")
-	fmt.Println("HandleChart: text:", text, "col:", col)
 
 	// Return empty chart data if filters not provided
 	if sponsor == "" || study == "" {
 		emptyChart := ChartData{
 			Labels:         []string{},
 			SampleIds:      []string{},
+			ManifestTime:   []int{},
+			OrderGapTime:   []int{},
 			LibraryTime:    []int{},
 			SequencingTime: []int{},
 		}
@@ -402,6 +392,8 @@ func prepareChartData(samples []db.TrackedSample) ChartData {
 	chartData := ChartData{
 		Labels:         make([]string, 0, len(samples)),
 		SampleIds:      make([]string, 0, len(samples)),
+		ManifestTime:   make([]int, 0, len(samples)),
+		OrderGapTime:   make([]int, 0, len(samples)),
 		LibraryTime:    make([]int, 0, len(samples)),
 		SequencingTime: make([]int, 0, len(samples)),
 	}
@@ -424,6 +416,19 @@ func prepareChartData(samples []db.TrackedSample) ChartData {
 			seqTime = *sample.SequencingTime
 		}
 		chartData.SequencingTime = append(chartData.SequencingTime, seqTime)
+
+		// Compute Manifest and OrderGap times:
+		if sample.ManifestCreated != nil && sample.ManifestUploaded != nil {
+			manifest := sample.ManifestUploaded.Sub(*sample.ManifestCreated)
+			manifestDays := int(manifest.Hours() / 24)
+			chartData.ManifestTime = append(chartData.ManifestTime, manifestDays)
+		}
+
+		if sample.OrderMade != nil && sample.LibraryStart != nil {
+			orderGap := sample.LibraryStart.Sub(*sample.OrderMade)
+			orderGapDays := int(orderGap.Hours() / 24)
+			chartData.OrderGapTime = append(chartData.OrderGapTime, orderGapDays)
+		}
 	}
 
 	return chartData
