@@ -153,8 +153,6 @@ class hotbarClass {
             pageButton.dataset.page = i;
 
             // All buttons of index > visibleCount are invisible
-            // TODO: consider the effect on page load performance here, since its
-            // all done client side?
             if (i > this.visibleCount) {
                 pageButton.hidden = true;
             }
@@ -348,7 +346,6 @@ function updateChartWithFilters(sponsor, study) {
             // Show the chart and hide the instruction box
             document.querySelector('#chart-container .instruction-box').classList.add('hidden');
             document.getElementById('timingChart').classList.remove('hidden');
-            // document.getElementById('chart-container').style.height = '1000px';
 
             updateChart(data);
         })
@@ -398,17 +395,17 @@ function createChart(data) {
                     backgroundColor: 'rgba(75, 192, 192, 0.7)',
                 },
                 {
-                    label: 'Order made -> library start',
+                    label: 'Order made to library start time',
                     data: data.orderGapTime,
                     backgroundColor: 'rgba(153, 102, 255, 0.7)',
                 },
                 {
-                    label: 'Library Time',
+                    label: 'Library time',
                     data: data.libraryTime,
                     backgroundColor: 'rgba(54, 162, 235, 0.7)',
                 },
                 {
-                    label: 'Sequencing Time',
+                    label: 'Sequencing time',
                     data: data.sequencingTime,
                     backgroundColor: 'rgba(255, 99, 132, 0.7)',
                 },

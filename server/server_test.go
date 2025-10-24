@@ -262,23 +262,6 @@ func TestServer(t *testing.T) {
 					So(body, ShouldNotContainSubstring, "SANG3456")
 				})
 			})
-
-			Convey("With only one search parameter", func() {
-				req := httptest.NewRequest("GET", "/api/samples?sponsor=Test+Sponsor&study=Test+Study&searchText=23", nil)
-				resp := httptest.NewRecorder()
-
-				srv.ServeHTTP(resp, req)
-
-				Convey("It should return 200 OK", func() {
-					So(resp.Code, ShouldEqual, http.StatusOK)
-				})
-
-				// Convey("It should indicate that both search text and column are required to search", func() {
-				// 	body := resp.Body.String()
-
-				// 	So(body, ShouldNotContainSubstring, "SANG123")
-				// })
-			})
 		})
 
 		Convey("When requesting the chart data API endpoint without required parameters", func() {

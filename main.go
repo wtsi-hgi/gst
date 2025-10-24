@@ -28,7 +28,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -45,7 +44,6 @@ func main() {
 	// Subcommands
 	exportCmd := flag.NewFlagSet("export", flag.ExitOnError)
 	serverCmd := flag.NewFlagSet("server", flag.ExitOnError)
-	// testCmd := flag.NewFlagSet("testp", flag.ExitOnError)
 
 	// Export command flags
 	outputPath := exportCmd.String("output", "samples.tsv", "Path to output TSV file")
@@ -68,8 +66,6 @@ func main() {
 	case "server":
 		serverCmd.Parse(os.Args[2:])
 		runServer(serverPort, serverMockPath, cacheTTL)
-	case "test":
-		runTest()
 	default:
 		fmt.Println("Expected 'export' or 'server' subcommand")
 		os.Exit(1)
@@ -143,30 +139,5 @@ func runServer(port *int, mockPath *string, cacheTTL *time.Duration) {
 	if err := srv.Start(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
 		os.Exit(1)
-	}
-}
-
-func runTest() {
-	query := `
-	SELECT * FROM TABLE mlwh_reporting.seq_ops_tracking_per_sample LIMIT 10;`
-	provider, err := db.New()
-	if err != nil {
-		log.Fatal("Failed to open db: ", err)
-	}
-	typedProvider := provider.(*db.MySQLQueryProvider)
-	data, err := typedProvider.ExecuteGeneral(query)
-	defer data.Close()
-
-	if err != nil {
-		log.Fatal("Failed to execute general query ", err)
-	}
-
-	fmt.Println("Tables in the database:")
-	for data.Next() {
-		var tableName string
-		if err := data.Scan(&tableName); err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("-", tableName)
 	}
 }
