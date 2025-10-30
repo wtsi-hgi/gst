@@ -43,9 +43,7 @@
         <div class="filter-group">
             <label> Search by </label>
             <input type="search" id="query" placeholder="Search..." name="searchText">
-            <select for="search-select" hx-get="/api/searchoptions" 
-            hx-target="#search-select" hx-trigger="#apply-filters click"
-            id="search-select" name="searchCol" disabled>
+            <select id="search-select" name="searchCol" disabled>
                 <option value=""> Select an option.. </option>
             </select>
         </div>

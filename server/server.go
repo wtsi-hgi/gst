@@ -68,7 +68,7 @@ type ChartData struct {
 	Labels         []string `json:"labels"`
 	SampleIds      []string `json:"sampleIds"`
 	ManifestTime   []int    `json:"manifestTime"`
-	OrderGapTime   []int    `json:"orderGapTime"`
+	OrderTime      []int    `json:"orderTime"`
 	LibraryTime    []int    `json:"libraryTime"`
 	SequencingTime []int    `json:"sequencingTime"`
 }
@@ -144,9 +144,11 @@ func (s *Server) handleSearchOptions(w http.ResponseWriter, r *http.Request) {
 		"Supplier Name",
 		"Manifest Created",
 		"Manifest Uploaded",
+		"Manifest Time",
 		"Labware Received",
 		"Plate/Tube",
 		"Order Made",
+		"Order Time",
 		"Library Start",
 		"Library Complete",
 		"Library Time",
@@ -159,8 +161,10 @@ func (s *Server) handleSearchOptions(w http.ResponseWriter, r *http.Request) {
 		"QC Pass",
 	}
 
-	for _, opt := range options {
-		w.Write([]byte(`<option value="` + opt + `">` + opt + `</option>`)) //nolint:errcheck
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(options); err != nil {
+		http.Error(w, fmt.Sprintf("Error encoding JSON: %v", err),
+			http.StatusInternalServerError)
 	}
 }
 
@@ -274,7 +278,7 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 			Labels:         []string{},
 			SampleIds:      []string{},
 			ManifestTime:   []int{},
-			OrderGapTime:   []int{},
+			OrderTime:      []int{},
 			LibraryTime:    []int{},
 			SequencingTime: []int{},
 		}
@@ -393,7 +397,7 @@ func prepareChartData(samples []db.TrackedSample) ChartData {
 		Labels:         make([]string, 0, len(samples)),
 		SampleIds:      make([]string, 0, len(samples)),
 		ManifestTime:   make([]int, 0, len(samples)),
-		OrderGapTime:   make([]int, 0, len(samples)),
+		OrderTime:      make([]int, 0, len(samples)),
 		LibraryTime:    make([]int, 0, len(samples)),
 		SequencingTime: make([]int, 0, len(samples)),
 	}
@@ -426,8 +430,8 @@ func prepareChartData(samples []db.TrackedSample) ChartData {
 
 		if sample.OrderMade != nil && sample.LibraryStart != nil {
 			orderGap := sample.LibraryStart.Sub(*sample.OrderMade)
-			orderGapDays := int(orderGap.Hours() / 24)
-			chartData.OrderGapTime = append(chartData.OrderGapTime, orderGapDays)
+			orderDays := int(orderGap.Hours() / 24)
+			chartData.OrderTime = append(chartData.OrderTime, orderDays)
 		}
 	}
 

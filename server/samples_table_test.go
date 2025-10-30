@@ -97,8 +97,10 @@ func TestSamplesTableTemplate(t *testing.T) {
 
 				// Check for new fields
 				So(output, ShouldContainSubstring, "Manifest Uploaded")
+				So(output, ShouldContainSubstring, "Manifest Time")
 				So(output, ShouldContainSubstring, "Labware Received")
 				So(output, ShouldContainSubstring, "Order Made")
+				So(output, ShouldContainSubstring, "Order Time")
 				So(output, ShouldContainSubstring, "Library Start")
 				So(output, ShouldContainSubstring, "Library Complete")
 				So(output, ShouldContainSubstring, "Pipeline")

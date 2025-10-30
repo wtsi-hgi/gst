@@ -43,37 +43,37 @@ function loadFacultySponsors() {
         });
 }
 
-function loadSearchOptions() {
-    var select = document.getElementById("search-select")
+// function loadSearchOptions() {
+//     var select = document.getElementById("search-select")
     
-    var options = [
-        "Sanger Sample ID",
-        "Supplier Name",
-        "Manifest Created",
-        "Manifest Uploaded",
-        "Labware Received",
-        "Plate/Tube",
-        "Order Made",
-        "Library Start",
-        "Library Complete",
-        "Library Time",
-        "Run ID",
-        "Platform",
-        "Pipeline",
-        "Sequencing Run Start",
-        "Sequencing QC Complete",
-        "Sequencing Time",
-        "QC Pass"
-    ]
+//     var options = [
+//         "Sanger Sample ID",
+//         "Supplier Name",
+//         "Manifest Created",
+//         "Manifest Uploaded",
+//         "Labware Received",
+//         "Plate/Tube",
+//         "Order Made",
+//         "Library Start",
+//         "Library Complete",
+//         "Library Time",
+//         "Run ID",
+//         "Platform",
+//         "Pipeline",
+//         "Sequencing Run Start",
+//         "Sequencing QC Complete",
+//         "Sequencing Time",
+//         "QC Pass"
+//     ]
 
-    options.forEach(option => {
-                console.log(`Adding option: ${option}`);
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
-                select.appendChild(opt);
-    });
-}
+//     options.forEach(option => {
+//                 console.log(`Adding option: ${option}`);
+//                 const opt = document.createElement('option');
+//                 opt.value = option;
+//                 opt.textContent = option;
+//                 select.appendChild(opt);
+//     });
+// }
 
 // Process studies response 
 function processStudiesResponse(event) {
@@ -390,13 +390,13 @@ function createChart(data) {
             labels: data.labels, // Using supplier names as labels
             datasets: [
                 {
-                    label: 'Manifest upload time',
+                    label: 'Manifest time',
                     data: data.manifestTime,
                     backgroundColor: 'rgba(75, 192, 192, 0.7)',
                 },
                 {
-                    label: 'Order made to library start time',
-                    data: data.orderGapTime,
+                    label: 'Order time',
+                    data: data.orderTime,
                     backgroundColor: 'rgba(153, 102, 255, 0.7)',
                 },
                 {
@@ -455,7 +455,7 @@ function createChart(data) {
 document.addEventListener('DOMContentLoaded', function () {
     // Load faculty sponsors on page load
     loadFacultySponsors();
-    loadSearchOptions();
+    // loadSearchOptions();
 
     // Handle study select and search enabling/disabling
     document.getElementById('sponsor-select').addEventListener('change', function () {
@@ -524,6 +524,27 @@ document.addEventListener('DOMContentLoaded', function () {
             updateChartWithFilters(sponsor, study);
             searchCol.disabled = false;
             searchApplyButton.disabled = false;
+
+            // Fetch and display search options
+            fetch('/api/searchoptions')
+                .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error ${response.status}')
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(data);
+                data.forEach(optionValue => {
+                    const option = document.createElement('option');
+                    option.value = optionValue;
+                    option.textContent = optionValue;
+                    searchCol.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error("Error displaying search options: ", error);
+            });
         }
     });
 

@@ -7,9 +7,11 @@
                     <th>Supplier Name</th>
                     <th>Manifest Created</th>
                     <th>Manifest Uploaded</th>
+                    <th>Manifest Time</th>
                     <th>Labware Received</th>
                     <th>Plate/Tube</th>
                     <th>Order Made</th>
+                    <th>Order Time</th>
                     <th>Library Start</th>
                     <th>Library Complete</th>
                     <th>Library Time</th>
@@ -29,9 +31,11 @@
                     <td>{{.SupplierName}}</td>
                     <td>{{if .ManifestCreated}}{{.ManifestCreated.Format "2006-01-02"}}{{end}}</td>
                     <td>{{if .ManifestUploaded}}{{.ManifestUploaded.Format "2006-01-02"}}{{end}}</td>
+                    <td>{{if .ManifestTime}}{{.ManifestTime}}{{else}}-{{end}}</td>
                     <td>{{if .LabwareReceived}}{{.LabwareReceived.Format "2006-01-02"}}{{end}}</td>
                     <td>{{.LabwareHumanBarcode}}</td>
                     <td>{{if .OrderMade}}{{.OrderMade.Format "2006-01-02"}}{{end}}</td>
+                    <td>{{if .OrderTime}}{{.OrderTime}}{{else}}-{{end}}</td>
                     <td>{{if .LibraryStart}}{{.LibraryStart.Format "2006-01-02"}}{{end}}</td>
                     <td>{{if .LibraryComplete}}{{.LibraryComplete.Format "2006-01-02"}}{{end}}</td>
                     <td>{{if .LibraryTime}}{{.LibraryTime}}{{else}}-{{end}}</td>
