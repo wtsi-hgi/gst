@@ -29,6 +29,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -172,6 +173,16 @@ func recordToSample(record []string) (TrackedSample, error) {
 	// Parse integer fields
 	sample.LibraryTime = parseInt(record[13])
 	sample.SequencingTime = parseInt(record[19])
+	if sample.ManifestUploaded != nil && sample.ManifestCreated != nil {
+		duration := sample.ManifestUploaded.Sub(*sample.ManifestCreated)
+		days := int(math.Floor(duration.Hours() / 24))
+		sample.ManifestTime = &days
+	}
+	if sample.LibraryStart != nil && sample.OrderMade != nil {
+		duration := sample.LibraryStart.Sub(*sample.OrderMade)
+		days := int(math.Floor(duration.Hours() / 24))
+		sample.OrderTime = &days
+	}
 
 	return sample, nil
 }

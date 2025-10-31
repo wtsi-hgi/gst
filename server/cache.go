@@ -182,6 +182,7 @@ func ApplySearch(samples []db.TrackedSample, text, col string) []db.TrackedSampl
 		v := reflect.ValueOf(sample)
 		switch v := v.FieldByName(field).Interface().(type) {
 		case string:
+			v = strings.ToLower(v)
 			if strings.Contains(v, text) {
 				filtered = append(filtered, sample)
 			}

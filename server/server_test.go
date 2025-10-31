@@ -316,23 +316,7 @@ func TestServer(t *testing.T) {
 			})
 
 			Convey("It should return the correct html option list", func() {
-				expected := `<option value="Sanger Sample ID">Sanger Sample ID</option>` +
-					`<option value="Supplier Name">Supplier Name</option>` +
-					`<option value="Manifest Created">Manifest Created</option>` +
-					`<option value="Manifest Uploaded">Manifest Uploaded</option>` +
-					`<option value="Labware Received">Labware Received</option>` +
-					`<option value="Plate/Tube">Plate/Tube</option>` +
-					`<option value="Order Made">Order Made</option>` +
-					`<option value="Library Start">Library Start</option>` +
-					`<option value="Library Complete">Library Complete</option>` +
-					`<option value="Library Time">Library Time</option>` +
-					`<option value="Run ID">Run ID</option>` +
-					`<option value="Platform">Platform</option>` +
-					`<option value="Pipeline">Pipeline</option>` +
-					`<option value="Sequencing Run Start">Sequencing Run Start</option>` +
-					`<option value="Sequencing QC Complete">Sequencing QC Complete</option>` +
-					`<option value="Sequencing Time">Sequencing Time</option>` +
-					`<option value="QC Pass">QC Pass</option>`
+				expected := `["Sanger Sample ID","Supplier Name","Manifest Created","Manifest Uploaded","Manifest Time","Labware Received","Plate/Tube","Order Made","Order Time","Library Start","Library Complete","Library Time","Run ID","Platform","Pipeline","Sequencing Run Start","Sequencing QC Complete","Sequencing Time","QC Pass"]` + "\n"
 
 				So(resp.Body.String(), ShouldEqual, expected)
 			})
