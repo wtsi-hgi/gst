@@ -144,8 +144,8 @@ func FilterSamples(samples []db.TrackedSample, sponsor, study string) []db.Track
 	return filtered
 }
 
-// TODO: Consider whether this could be merged into FilterSamples to reduce the
-// time complexity of handleSamples (since it calls both sequentially).
+// ApplySearch filters samples based on a search text and column. It will return
+// all samples in which the column specified contains the search text.
 func ApplySearch(samples []db.TrackedSample, text, col string) []db.TrackedSample {
 	if text == "" || col == "" {
 		return samples
