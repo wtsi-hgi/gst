@@ -14,7 +14,6 @@ function loadFacultySponsors() {
             return response.json();
         })
         .then(data => {
-            console.log("Raw sponsors data:", data);
             const sponsorSelect = document.getElementById('sponsor-select');
 
             // Ensure we have an array of sponsors
@@ -30,7 +29,6 @@ function loadFacultySponsors() {
 
             // Add sponsors to dropdown
             data.facultySponsors.forEach(sponsor => {
-                console.log(`Adding sponsor: ${sponsor}`);
                 const option = document.createElement('option');
                 option.value = sponsor;
                 option.textContent = sponsor;
@@ -43,47 +41,13 @@ function loadFacultySponsors() {
         });
 }
 
-// function loadSearchOptions() {
-//     var select = document.getElementById("search-select")
-    
-//     var options = [
-//         "Sanger Sample ID",
-//         "Supplier Name",
-//         "Manifest Created",
-//         "Manifest Uploaded",
-//         "Labware Received",
-//         "Plate/Tube",
-//         "Order Made",
-//         "Library Start",
-//         "Library Complete",
-//         "Library Time",
-//         "Run ID",
-//         "Platform",
-//         "Pipeline",
-//         "Sequencing Run Start",
-//         "Sequencing QC Complete",
-//         "Sequencing Time",
-//         "QC Pass"
-//     ]
-
-//     options.forEach(option => {
-//                 console.log(`Adding option: ${option}`);
-//                 const opt = document.createElement('option');
-//                 opt.value = option;
-//                 opt.textContent = option;
-//                 select.appendChild(opt);
-//     });
-// }
-
 // Process studies response 
 function processStudiesResponse(event) {
     if (event.detail.target.id === 'study-select') {
         try {
             const rawData = event.detail.xhr.responseText;
-            console.log("Raw studies response:", rawData);
 
             const data = JSON.parse(rawData);
-            console.log("Parsed studies data:", data);
             const studySelect = document.getElementById('study-select');
 
             // Clear existing options
@@ -99,7 +63,6 @@ function processStudiesResponse(event) {
 
             // Add studies to dropdown
             data.studies.forEach(study => {
-                console.log(`Adding study: ${study}`);
                 const option = document.createElement('option');
                 option.value = study;
                 option.textContent = study;
@@ -111,13 +74,19 @@ function processStudiesResponse(event) {
     }
 }
 
+function getFilters() {
+    const searchText = document.getElementById('query').value;
+    const searchCol = document.getElementById('search-select').value;
+    const sponsor = document.getElementById('sponsor-select').value;
+    const study = document.getElementById('study-select').value;
+    return { searchText, searchCol, sponsor, study };
+}
+
 function handlePagination(event) {
     if (event.detail.target.id === 'samples-container') {
-        const sponsor = document.getElementById('sponsor-select').value;
-        const study = document.getElementById('study-select').value;
+        const { sponsor, study } = getFilters();
 
         if (sponsor && study) {
-            // Initialize pagination if we have a table
             initPagination();
         }
     }
@@ -136,7 +105,7 @@ class hotbarClass {
         this._buildMap();
     }
 
-    _buildMap(){
+    _buildMap() {
         // Add prev button
         const prevButton = document.createElement('button');
         prevButton.innerHTML = '&laquo;';
@@ -194,28 +163,28 @@ class hotbarClass {
             let middle = Math.floor(this.visibleCount / 2)
             let newLeftmost = this.selectedIndex - middle;
             newLeftmost = Math.max(0, newLeftmost);
-            newLeftmost = Math.min(newLeftmost, this.buttonMap.size-this.visibleCount);
-            let newRightmost = newLeftmost+this.visibleCount;
+            newLeftmost = Math.min(newLeftmost, this.buttonMap.size - this.visibleCount);
+            let newRightmost = newLeftmost + this.visibleCount;
 
             // Update button visibility
             const difference = next.textContent - prev.textContent;
-            
+
             if (difference > 0) { // Moving right
                 for (let i = this.leftmostIndex; i < newLeftmost; i++) {
                     const left = this.buttonMap.get(i);
                     if (left) left.hidden = true;
-                    const right = this.buttonMap.get(i+this.visibleCount);
+                    const right = this.buttonMap.get(i + this.visibleCount);
                     if (right) right.hidden = false;
                 }
             } else if (difference < 0) { // Moving left
-                for(let i = this.rightmostIndex; i > newRightmost; i--) {
+                for (let i = this.rightmostIndex; i > newRightmost; i--) {
                     const right = this.buttonMap.get(i);
                     if (right) right.hidden = true;
-                    const left = this.buttonMap.get(i-this.visibleCount);
+                    const left = this.buttonMap.get(i - this.visibleCount);
                     if (left) left.hidden = false;
                 }
             }
-            
+
             this.leftmostIndex = newLeftmost;
             this.rightmostIndex = newRightmost;
         }
@@ -305,35 +274,22 @@ function showPage(pageNumber, rows, rowsPerPage, totalPages, infoElement) {
     });
 }
 
-// Update chart to match search
-function updateChartWithSearch(searchText, searchCol, sponsor, study) {
-    const params = new URLSearchParams();
-    params.append('searchText', searchText);
-    params.append('searchCol', searchCol);
-    params.append('sponsor', sponsor);
-    params.append('study', study);
+function filterChart() {
+    const { searchText, searchCol, sponsor, study } = getFilters();
+    if (!sponsor && study) {
+        return;
+    }
 
-    fetch('/api/chart?' + params.toString())
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('HTTP error ${response.status}')
-            }
-            return response.json();
-        })
-        .then(data => {
-            updateChart(data);
-        })
-        .catch(error => {
-            console.error("Error applying search criteria:", error);
-            alert("Failed to apply search. Please try again.");
-        });
-}
+    const params = new URLSearchParams({
+        sponsor,
+        study
+    });
 
-// Update chart with filter values
-function updateChartWithFilters(sponsor, study) {
-    const params = new URLSearchParams();
-    params.append('sponsor', sponsor);
-    params.append('study', study);
+    const isSearch = searchText !== null && searchCol !== null;
+    if (isSearch) {
+        params.append('searchText', searchText);
+        params.append('searchCol', searchCol);
+    }
 
     fetch('/api/chart?' + params.toString())
         .then(response => {
@@ -343,27 +299,46 @@ function updateChartWithFilters(sponsor, study) {
             return response.json();
         })
         .then(data => {
-            // Show the chart and hide the instruction box
-            document.querySelector('#chart-container .instruction-box').classList.add('hidden');
-            document.getElementById('timingChart').classList.remove('hidden');
+            if (!isSearch) {
+                document.querySelector('#chart-container .instruction-box').classList.add('hidden');
+                document.getElementById('timingChart').classList.remove('hidden');
+            }
 
-            updateChart(data);
+            updateChart(data, 0);
         })
         .catch(error => {
-            console.error("Error fetching chart data:", error);
-            alert("Failed to load chart data. Please try again.");
+            console.error("Error loading chart data:", error);
+
+            if (isSearch) {
+                alert("Failed to apply search. Please try again.");
+            } else {
+                alert("Failed to load chart data. Please try again.");
+            }
         });
 }
 
-// Create and update chart
-let chart; // Global chart variable
+let chart;
 
-function updateChart(data) {
+function updateChart(data, startIndex) {
     if (chart) {
         chart.destroy();
     }
 
-    createChart(data);
+    const totalRowsInput = document.getElementById("totalRows");
+    const rowCount = totalRowsInput.value === "" ? 50 : Number(totalRowsInput.value);
+    const refreshChart = document.getElementById("refreshChart");
+    refreshChart.toggleAttribute("disabled", false);
+
+    createChart(paginateChartData(data, startIndex, rowCount))
+}
+
+function paginateChartData(data, startIndex, totalRows) {
+    const paginatedData = [];
+    for (const key in data) {
+        paginatedData[key] = data[key].slice(startIndex, totalRows);
+    }
+
+    return paginatedData
 }
 
 function createChart(data) {
@@ -379,8 +354,19 @@ function createChart(data) {
     }
 
     infoBoxChart.classList.add('hidden');
-    // infoBoxTable.classList.add('hidden');
-    document.getElementById('chart-container').style.height = '1000px';
+
+    // Allow the user to set the number of rows in the chart to display.
+    const totalRows = document.getElementById("totalRows");
+    totalRows.toggleAttribute("disabled", false);
+    totalRows.max = data.labels.length;
+    console.log("setting total rows max as", totalRows.max);
+    if (totalRows.value === "" || totalRows.disabled) {
+        totalRows.value = Math.min(data.labels.length, 70);
+        console.log("setting total rows value as", totalRows.value);
+    }
+
+    const container = document.getElementById('chart-container')
+    container.style.height = totalRows.value * 20 + 'px';
 
     const ctx = document.getElementById('timingChart').getContext('2d');
 
@@ -453,9 +439,7 @@ function createChart(data) {
 
 // Setup event listeners
 document.addEventListener('DOMContentLoaded', function () {
-    // Load faculty sponsors on page load
     loadFacultySponsors();
-    // loadSearchOptions();
 
     // Handle study select and search enabling/disabling
     document.getElementById('sponsor-select').addEventListener('change', function () {
@@ -477,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Enable apply search button only when both search fields are populated
     const searchTextInput = document.getElementById('query');
     const searchMenuInput = document.getElementById('search-select');
-    
+
     function checkSearchFields() {
         const applySearchButton = document.getElementById('apply-search');
         if (searchMenuInput.value && searchTextInput.value.trim()) {
@@ -513,50 +497,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Apply filter handler - also updates the chart & enables search
     document.getElementById('apply-filters').addEventListener('click', function () {
-        const sponsor = document.getElementById('sponsor-select').value;
-        const study = document.getElementById('study-select').value;
+        const { sponsor, study } = getFilters();
         const searchCol = document.getElementById('search-select');
         const searchApplyButton = document.getElementById('apply-search');
 
         if (sponsor && study) {
-            // HTMX will handle the sample table update
-            // We manually trigger chart update here
-            updateChartWithFilters(sponsor, study);
+            filterChart();
             searchCol.disabled = false;
             searchApplyButton.disabled = false;
 
             // Fetch and display search options
             fetch('/api/searchoptions')
                 .then(response => {
-                if (!response.ok) {
-                    throw new Error('HTTP error ${response.status}')
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log(data);
-                data.forEach(optionValue => {
-                    const option = document.createElement('option');
-                    option.value = optionValue;
-                    option.textContent = optionValue;
-                    searchCol.appendChild(option);
+                    if (!response.ok) {
+                        throw new Error('HTTP error ${response.status}')
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    data.forEach(optionValue => {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = optionValue;
+                        searchCol.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error displaying search options: ", error);
                 });
-            })
-            .catch(error => {
-                console.error("Error displaying search options: ", error);
-            });
         }
     });
 
     // Apply search handler
     document.getElementById('apply-search').addEventListener('click', function () {
-        const searchText = document.getElementById('query');
-        const searchCol = document.getElementById('search-select');
-        const sponsor = document.getElementById('sponsor-select').value;
-        const study = document.getElementById('study-select').value;
-
-        if (searchText && searchCol) {
-            updateChartWithSearch(searchText.value, searchCol.value, sponsor, study)
-        }
+        filterChart();
     });
+
+    document.getElementById("refreshChart").addEventListener('click', function () {
+        filterChart()
+    })
 });

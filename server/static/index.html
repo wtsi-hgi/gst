@@ -33,10 +33,10 @@
         </div>
 
         <div class="filter-button">
-           <button id="apply-filters" hx-get="/api/samples" hx-target="#samples-container"
-            hx-include="[name='sponsor'],[name='study']" hx-trigger="click" disabled>
-            Apply
-            </button> 
+            <button id="apply-filters" hx-get="/api/samples" hx-target="#samples-container"
+                hx-include="[name='sponsor'],[name='study']" hx-trigger="click" disabled>
+                Apply
+            </button>
         </div>
     </div>
     <div class="filters">
@@ -49,13 +49,13 @@
         </div>
         <div class="search-button">
             <button id="apply-search" hx-trigger="click" hx-get="/api/samples" hx-target="#samples-container"
-            hx-include="[name='searchCol'],[name='searchText'],[name='sponsor'],[name='study']" disabled>
+                hx-include="[name='searchCol'],[name='searchText'],[name='sponsor'],[name='study']" disabled>
                 Apply
             </button>
         </div>
     </div>
 
-    
+
 
     <!-- Chart section moved above table -->
     <h2>Processing Time Chart</h2>
@@ -63,8 +63,10 @@
         <div class="instruction-box">
             Please select a Faculty Sponsor and Study to view the chart.
         </div>
-        <canvas id="timingChart" class="hidden"></canvas>
+        <canvas id="timingChart" class="hidden" disabled></canvas>
     </div>
+    Number of rows displayed: <input id="totalRows" type="number" min="0" step="1" disabled>
+    <button id="refreshChart" disabled> Apply </button>
 
     <h2>Sample Data</h2>
     <div class='samples-container' id="samples-container">
