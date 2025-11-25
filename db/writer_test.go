@@ -40,6 +40,8 @@ func TestWriter(t *testing.T) {
 	Convey("Given a collection of TrackedSample records", t, func() {
 		// Create test data
 		sampleTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+		manifestTime := 3
+		orderTime := 5
 		libraryTime := 5
 		seqTime := 10
 		samples := []db.TrackedSample{
@@ -52,9 +54,11 @@ func TestWriter(t *testing.T) {
 				SupplierName:         "Test Supplier",
 				ManifestCreated:      &sampleTime,
 				ManifestUploaded:     &sampleTime,
+				ManifestTime:         &manifestTime,
 				LabwareReceived:      &sampleTime,
 				LabwareHumanBarcode:  "PLATE001",
 				OrderMade:            &sampleTime,
+				OrderTime:            &orderTime,
 				LibraryStart:         &sampleTime,
 				LibraryComplete:      &sampleTime,
 				LibraryTime:          &libraryTime,
@@ -73,7 +77,7 @@ func TestWriter(t *testing.T) {
 		Convey("When writing to a TSV file", func() {
 			tmpDir, err := os.MkdirTemp("", "gst_test")
 			So(err, ShouldBeNil)
-			defer os.RemoveAll(tmpDir)
+			defer os.RemoveAll(tmpDir) //nolint:errcheck
 
 			outPath := filepath.Join(tmpDir, "output.tsv")
 			err = collection.ToTSV(outPath)

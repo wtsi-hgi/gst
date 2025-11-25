@@ -59,7 +59,7 @@ func getAvailablePort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close()
+	defer l.Close() //nolint:errcheck
 
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
@@ -83,6 +83,29 @@ func TestServer(t *testing.T) {
 					FacultySponsor:       "Test Sponsor",
 					Programme:            "Test Programme",
 					SangerSampleID:       "SANG123",
+					SupplierName:         "Test Supplier",
+					ManifestCreated:      &sampleTime,
+					ManifestUploaded:     &sampleTime,
+					LabwareReceived:      &sampleTime,
+					LabwareHumanBarcode:  "PLATE001",
+					OrderMade:            &sampleTime,
+					LibraryStart:         &sampleTime,
+					LibraryComplete:      &sampleTime,
+					LibraryTime:          &libraryTime,
+					RunID:                "RUN001",
+					Platform:             "Illumina",
+					Pipeline:             "Pipeline1",
+					SequencingRunStart:   &sampleTime,
+					SequencingQCComplete: &sampleTime,
+					SequencingTime:       &seqTime,
+					QCPass:               "1",
+				},
+				{
+					StudyID:              "1234",
+					StudyName:            "Test Study",
+					FacultySponsor:       "Test Sponsor",
+					Programme:            "Test Programme",
+					SangerSampleID:       "SANG3456",
 					SupplierName:         "Test Supplier",
 					ManifestCreated:      &sampleTime,
 					ManifestUploaded:     &sampleTime,
@@ -221,6 +244,24 @@ func TestServer(t *testing.T) {
 				So(body, ShouldContainSubstring, "SANG123")
 				So(body, ShouldNotContainSubstring, "SANG456")
 			})
+
+			Convey("With both search parameters", func() {
+				req := httptest.NewRequest("GET", "/api/samples?sponsor=Test+Sponsor&study=Test+Study&searchText=23&searchCol=Sanger%20Sample%20ID", nil)
+				resp := httptest.NewRecorder()
+
+				srv.ServeHTTP(resp, req)
+
+				Convey("It should return 200 OK", func() {
+					So(resp.Code, ShouldEqual, http.StatusOK)
+				})
+
+				Convey("The chart should only display rows in which the column selected contans the given substring", func() {
+					body := resp.Body.String()
+
+					So(body, ShouldContainSubstring, "SANG123")
+					So(body, ShouldNotContainSubstring, "SANG3456")
+				})
+			})
 		})
 
 		Convey("When requesting the chart data API endpoint without required parameters", func() {
@@ -261,6 +302,23 @@ func TestServer(t *testing.T) {
 				So(body, ShouldContainSubstring, "5")  // LibraryTime value
 				So(body, ShouldContainSubstring, "10") // SequencingTime value
 				So(body, ShouldNotContainSubstring, "SANG456")
+			})
+		})
+
+		Convey("When requesting the search by options", func() {
+			req := httptest.NewRequest("GET", "/api/searchoptions", nil)
+			resp := httptest.NewRecorder()
+
+			srv.ServeHTTP(resp, req)
+
+			Convey("It should return 200 OK", func() {
+				So(resp.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("It should return the correct html option list", func() {
+				expected := `["Sanger Sample ID","Supplier Name","Manifest Created","Manifest Uploaded","Manifest Time","Labware Received","Plate/Tube","Order Made","Order Time","Library Start","Library Complete","Library Time","Run ID","Platform","Pipeline","Sequencing Run Start","Sequencing QC Complete","Sequencing Time","QC Pass"]` + "\n"
+
+				So(resp.Body.String(), ShouldEqual, expected)
 			})
 		})
 	})

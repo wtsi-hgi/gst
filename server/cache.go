@@ -26,7 +26,10 @@
 package server
 
 import (
+	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -118,7 +121,7 @@ func GetStudiesForSponsor(samples []db.TrackedSample, sponsor string) []string {
 	return studies
 }
 
-// FilterSamples filters samples by faculty sponsor and optionally by study name.
+// FilterSamples filters samples by faculty sponsor and study name.
 func FilterSamples(samples []db.TrackedSample, sponsor, study string) []db.TrackedSample {
 	if sponsor == "" {
 		return samples
@@ -136,6 +139,65 @@ func FilterSamples(samples []db.TrackedSample, sponsor, study string) []db.Track
 		}
 
 		filtered = append(filtered, sample)
+	}
+
+	return filtered
+}
+
+// ApplySearch filters samples based on a search text and column. It will return
+// all samples in which the column specified contains the search text.
+func ApplySearch(samples []db.TrackedSample, text, col string) []db.TrackedSample {
+	if text == "" || col == "" {
+		return samples
+	}
+
+	var filtered []db.TrackedSample
+	text = strings.ToLower(text)
+
+	colMap := map[string]string{
+		"Sanger Sample ID":       "SangerSampleID",
+		"Supplier Name":          "SupplierName",
+		"Manifest Created":       "ManifestCreated",
+		"Manifest Uploaded":      "ManifestUploaded",
+		"Manifest Time":          "ManifestTime",
+		"Labware Received":       "LabwareReceived",
+		"Plate/Tube":             "LabwareHumanBarcode",
+		"Order Made":             "OrderMade",
+		"Order Time":             "OrderTime",
+		"Library Start":          "LibraryStart",
+		"Library Complete":       "LibraryComplete",
+		"Library Time":           "LibraryTime",
+		"Run ID":                 "RunID",
+		"Platform":               "Platform",
+		"Pipeline":               "Pipeline",
+		"Sequencing Run Start":   "SequencingRunStart",
+		"Sequencing QC Complete": "SequencingQCComplete",
+		"Sequencing Time":        "SequencingTime",
+		"QC Pass":                "QCPass",
+	}
+
+	field := colMap[col]
+
+	for _, sample := range samples {
+		v := reflect.ValueOf(sample)
+		switch v := v.FieldByName(field).Interface().(type) {
+		case string:
+			v = strings.ToLower(v)
+			if strings.Contains(v, text) {
+				filtered = append(filtered, sample)
+			}
+		case *time.Time:
+			if strings.Contains(v.Format(time.DateOnly), text) {
+				filtered = append(filtered, sample)
+			}
+		case *int:
+			if v != nil {
+				strInt := strconv.FormatInt(int64(*v), 10)
+				if strInt == text {
+					filtered = append(filtered, sample)
+				}
+			}
+		}
 	}
 
 	return filtered

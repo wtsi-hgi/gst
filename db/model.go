@@ -39,9 +39,11 @@ type TrackedSample struct {
 	SupplierName         string
 	ManifestCreated      *time.Time
 	ManifestUploaded     *time.Time
+	ManifestTime         *int
 	LabwareReceived      *time.Time
 	LabwareHumanBarcode  string // "Plate/Tube"
 	OrderMade            *time.Time
+	OrderTime            *int
 	LibraryStart         *time.Time
 	LibraryComplete      *time.Time
 	LibraryTime          *int // DATEDIFF result

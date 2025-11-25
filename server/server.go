@@ -67,6 +67,8 @@ type Server struct {
 type ChartData struct {
 	Labels         []string `json:"labels"`
 	SampleIds      []string `json:"sampleIds"`
+	ManifestTime   []int    `json:"manifestTime"`
+	OrderTime      []int    `json:"orderTime"`
 	LibraryTime    []int    `json:"libraryTime"`
 	SequencingTime []int    `json:"sequencingTime"`
 }
@@ -95,8 +97,9 @@ func New(config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to access static files: %w", err)
 	}
 
-	// Load and parse templates
-	tmpl, err := template.ParseFS(staticFiles, "static/*.html")
+	// Load and parse templates from the static sub-directory
+	// Use the sub filesystem we created above so patterns match correctly.
+	tmpl, err := template.ParseFS(staticDir, "*.html")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse templates: %w", err)
 	}
@@ -126,12 +129,43 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/chart", s.handleChart)
 	s.mux.HandleFunc("/api/filters", s.handleFilters)
 	s.mux.HandleFunc("/api/studies", s.handleStudies)
+	s.mux.HandleFunc("/api/searchoptions", s.handleSearchOptions)
 
 	// Static files route
 	s.mux.HandleFunc("/static/", s.handleStaticFiles)
 
 	// Index route - must be last as it's the catch-all
 	s.mux.HandleFunc("/", s.handleIndex)
+}
+
+func (s *Server) handleSearchOptions(w http.ResponseWriter, r *http.Request) {
+	options := []string{
+		"Sanger Sample ID",
+		"Supplier Name",
+		"Manifest Created",
+		"Manifest Uploaded",
+		"Manifest Time",
+		"Labware Received",
+		"Plate/Tube",
+		"Order Made",
+		"Order Time",
+		"Library Start",
+		"Library Complete",
+		"Library Time",
+		"Run ID",
+		"Platform",
+		"Pipeline",
+		"Sequencing Run Start",
+		"Sequencing QC Complete",
+		"Sequencing Time",
+		"QC Pass",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(options); err != nil {
+		http.Error(w, fmt.Sprintf("Error encoding JSON: %v", err),
+			http.StatusInternalServerError)
+	}
 }
 
 // handleStaticFiles serves static files like CSS and JS.
@@ -175,6 +209,9 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 	// Get required filter parameters
 	sponsor := r.URL.Query().Get("sponsor")
 	study := r.URL.Query().Get("study")
+	// Get optional search parameters
+	text := r.URL.Query().Get("searchText")
+	col := r.URL.Query().Get("searchCol")
 
 	// Ensure both filters are provided
 	if sponsor == "" || study == "" {
@@ -203,8 +240,11 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply filters (now both are required)
+	// Apply filters
 	filteredSamples := FilterSamples(samplesData.Samples, sponsor, study)
+
+	// Apply search criteria
+	filteredSamples = ApplySearch(filteredSamples, text, col)
 
 	// Create template data
 	templateData := struct {
@@ -228,12 +268,17 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 	// Get required filter parameters
 	sponsor := r.URL.Query().Get("sponsor")
 	study := r.URL.Query().Get("study")
+	// Get optional search parameters
+	text := r.URL.Query().Get("searchText")
+	col := r.URL.Query().Get("searchCol")
 
 	// Return empty chart data if filters not provided
 	if sponsor == "" || study == "" {
 		emptyChart := ChartData{
 			Labels:         []string{},
 			SampleIds:      []string{},
+			ManifestTime:   []int{},
+			OrderTime:      []int{},
 			LibraryTime:    []int{},
 			SequencingTime: []int{},
 		}
@@ -256,6 +301,9 @@ func (s *Server) handleChart(w http.ResponseWriter, r *http.Request) {
 
 	// Apply filters
 	filteredSamples := FilterSamples(samplesData.Samples, sponsor, study)
+
+	// Apply search
+	filteredSamples = ApplySearch(filteredSamples, text, col)
 
 	// Prepare chart data
 	chartData := prepareChartData(filteredSamples)
@@ -299,7 +347,7 @@ func (s *Server) handleFilters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(jsonData)
+	w.Write(jsonData) //nolint:errcheck
 }
 
 // handleStudies provides a list of studies for a given faculty sponsor.
@@ -340,7 +388,7 @@ func (s *Server) handleStudies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(jsonData)
+	w.Write(jsonData) //nolint:errcheck
 }
 
 // prepareChartData converts sample data into a format suitable for Chart.js.
@@ -348,6 +396,8 @@ func prepareChartData(samples []db.TrackedSample) ChartData {
 	chartData := ChartData{
 		Labels:         make([]string, 0, len(samples)),
 		SampleIds:      make([]string, 0, len(samples)),
+		ManifestTime:   make([]int, 0, len(samples)),
+		OrderTime:      make([]int, 0, len(samples)),
 		LibraryTime:    make([]int, 0, len(samples)),
 		SequencingTime: make([]int, 0, len(samples)),
 	}
@@ -370,6 +420,19 @@ func prepareChartData(samples []db.TrackedSample) ChartData {
 			seqTime = *sample.SequencingTime
 		}
 		chartData.SequencingTime = append(chartData.SequencingTime, seqTime)
+
+		// Compute Manifest and OrderGap times:
+		if sample.ManifestCreated != nil && sample.ManifestUploaded != nil {
+			manifest := sample.ManifestUploaded.Sub(*sample.ManifestCreated)
+			manifestDays := int(manifest.Hours() / 24)
+			chartData.ManifestTime = append(chartData.ManifestTime, manifestDays)
+		}
+
+		if sample.OrderMade != nil && sample.LibraryStart != nil {
+			orderGap := sample.LibraryStart.Sub(*sample.OrderMade)
+			orderDays := int(orderGap.Hours() / 24)
+			chartData.OrderTime = append(chartData.OrderTime, orderDays)
+		}
 	}
 
 	return chartData

@@ -26,8 +26,10 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -75,7 +77,7 @@ func (p *MySQLQueryProvider) Execute() (*TrackedSampleCollection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("database connection error: %w", err)
 	}
-	defer p.connector.Close()
+	defer p.connector.Close() //nolint:errcheck
 
 	// Check for nil db connection - this protects against mock tests
 	// that don't configure a proper DB object
@@ -88,7 +90,7 @@ func (p *MySQLQueryProvider) Execute() (*TrackedSampleCollection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query execution error: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	return parseRows(rows)
 }
@@ -104,7 +106,7 @@ func (p *MockQueryProvider) Execute() (*TrackedSampleCollection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open mock data file: %w", err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	reader := csv.NewReader(file)
 	reader.Comma = '\t'
@@ -171,6 +173,16 @@ func recordToSample(record []string) (TrackedSample, error) {
 	// Parse integer fields
 	sample.LibraryTime = parseInt(record[13])
 	sample.SequencingTime = parseInt(record[19])
+	if sample.ManifestUploaded != nil && sample.ManifestCreated != nil {
+		duration := sample.ManifestUploaded.Sub(*sample.ManifestCreated)
+		days := int(math.Floor(duration.Hours() / 24))
+		sample.ManifestTime = &days
+	}
+	if sample.LibraryStart != nil && sample.OrderMade != nil {
+		duration := sample.LibraryStart.Sub(*sample.OrderMade)
+		days := int(math.Floor(duration.Hours() / 24))
+		sample.OrderTime = &days
+	}
 
 	return sample, nil
 }
@@ -226,4 +238,28 @@ func parseInt(s string) *int {
 	}
 
 	return &i
+}
+
+// Execute executes the SQL query and returns the results.
+func (p *MySQLQueryProvider) ExecuteGeneral(query string) (*sql.Rows, error) {
+	db, err := p.connector.Connect()
+	if err != nil {
+		return nil, fmt.Errorf("database connection error: %w", err)
+	}
+	defer p.connector.Close() //nolint:errcheck
+
+	// Check for nil db connection - this protects against mock tests
+	// that don't configure a proper DB object
+	if db == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+
+	// Execute the embedded query
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("query execution error: %w", err)
+	}
+	// defer rows.Close()
+
+	return rows, nil
 }
